@@ -51,15 +51,15 @@ db.save('person', {id: 1, name: 'Bob'}, function (data) {
 })
 ```
 ## Selecting
-//db.select(table, condition, field, callback)
 ```
+//db.select(table, condition, field, callback)
 db.select('persons', {name: 'Bob'}, ['name', 'gender'], function (data) {
   console.log(data)
 })
 ```
 ## Counting (select count(*) from table)
-//db.count(table, condition, callback)
 ```
+//db.count(table, condition, callback)
 db.count('person', {name: 'Bob'}, function (count) {
   console.log('there are ' + count + ' persons named "Bob"')  
 })
