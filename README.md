@@ -1,8 +1,8 @@
 # db3
 neat db interface for node-mysql
 
-# Introduction
-Db3 will replace SQL queries in your code with simple, clean and readable syntax. It's aim to provide shorthand methods for basic and most used queries, rather than trying to cover the whole SQL specification, so some operations are not supported (you can write them in SQL yourself). Db3 is based on excellent [node-mysql](https://github.com/felixge/node-mysql) lib.
+## Introduction
+Db3 replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used query patterns, rather than trying to cover the whole SQL specification - so some operations are not supported (you can write them in SQL directly). Db3 is based on excellent [node-mysql](https://github.com/felixge/node-mysql) lib.
 
 ## Installation
 ```
