@@ -11,11 +11,17 @@ npm install db3
 
 ## Connecting
 ```
-var Db3 = require('db3')
-var db = new Db3({host: 'example.org', user: 'bob', password: 'secret'})
+var db3 = require('db3')
+var db = db3.connect({host: 'example.org', user: 'bob', password: 'secret'})
 ```
 connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
-
+##Disconnecting
+```
+//db.end(cb)
+db.end(function (err) {
+  console.log('all connections closed gracefully')
+})
+```
 ## Adding (insert ...)
 ```
 //db.insert(table, data, callback)
@@ -56,5 +62,12 @@ db.select('persons', {name: 'Bob'}, ['name', 'gender'], function (data) {
 ```
 db.count('person', {name: 'Bob'}, function (count) {
   console.log('there are ' + count + ' persons named "Bob"')  
+})
+```
+## SQL query
+Proxied to the underlying node-mysql lib, but with swapped 'err' and 'data' arguments (more info [here](https://github.com/felixge/node-mysql#performing-queries))
+```
+db.query('select ??, count(*) from ?? group by ??', ['gender', 'person', 'gender'], function (data) {
+  console.log(data)
 })
 ```

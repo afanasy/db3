@@ -2,8 +2,12 @@ var
   mysql = require('mysql'),
   _ = require('underscore')
 
+exports.connect = function (d) {
+  return new Db3(mysql.createPool(d))
+}
+
 var Db3 = function (d) {
-  this.db = mysql.createPool(d)
+  this.db = d
   return this
 }
 
@@ -21,10 +25,8 @@ _.extend(Db3.prototype, {
       value = mysql.escape(value)
     return key + ' ' + operator + ' ' + value
   },
-  query: function (name, query, cb) {
-    if ((this.logQuery === true) || (this.logQuery === name) || _.contains(this.logQuery, name))
-      console.log(query)
-    this.db.query(query, function (err, data) {return cb && cb(data, err)})
+  end: function (cb) {
+    return this.db.end(cb)
   },
   insert: function (table, d, cb) {
     if (_.isFunction(d)) {
@@ -33,17 +35,17 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    this.query('insert', mysql.format('insert ?? set ?', [table, d]), cb)
+    this.q('insert', mysql.format('insert ?? set ?', [table, d]), cb)
   },
   update: function (table, cond, d, cb)  {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    this.query('update', mysql.format('update ?? set ?', [table, d]) + ' where ' + this.cond(cond), cb)
+    this.q('update', mysql.format('update ?? set ?', [table, d]) + ' where ' + this.cond(cond), cb)
   },
   delete: function (table, cond, cb) {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    this.query('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
+    this.q('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
   },
   save: function (table, d, cb) {
     if (_.isFunction(d)) {
@@ -60,7 +62,7 @@ _.extend(Db3.prototype, {
         return pair(key, value)
     })
     values = values.join(', ')
-    this.query('save', 'insert ' + mysql.escapeId(table) + ' set ' + values + ' on duplicate key update ' + values, cb)
+    this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + values + ' on duplicate key update ' + values, cb)
   },
   select: function (table, cond, field, cb) {
     if (_.isFunction(cond)) {
@@ -83,7 +85,7 @@ _.extend(Db3.prototype, {
     var query = 'select ' + (field || '*') + ' from ' + mysql.escapeId(table)
     if (cond)
       query += ' where ' + cond
-    this.query('select', query, cb)
+    this.q('select', query, cb)
   },
   count: function (table, cond, cb) {
     if (_.isFunction(cond)) {
@@ -94,10 +96,20 @@ _.extend(Db3.prototype, {
     var query = 'select count(*) as count from ' + mysql.escapeId(table)
     if (cond)
       query += ' where ' + cond
-    this.query('count', query, function (d) {
+    this.q('count', query, function (d) {
       cb && cb((d && d[0] && d[0].count) || 0)
     })
+  },
+  q: function (name, query, cb) {
+    if ((this.logQuery === true) || (this.logQuery === name) || _.contains(this.logQuery, name))
+      console.log(query)
+    this.query(query, cb)
+  },
+  query: function (sql, values, cb) {
+    if (_.isFunction(values)) {
+      cb = values
+      values = undefined
+    }
+    return this.db.query(sql, values, function (err, results, fields) {return cb(results, err, fields)})
   }
 })
-
-module.exports = Db3

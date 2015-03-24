@@ -1,9 +1,25 @@
 var
   should = require('chai').expect(),
-  Db3 = require('./db3.js'),
-  db = new Db3({user: 'root', database : 'passio3_db', connectionLimit: 100, dateStrings: true, supportBigNumbers: true, bigNumberStrings: true})
+  db3 = require('./db3.js'),
+  db = db3.connect({user: 'root', database : 'test'})
 
-describe('Db3', function (){
+describe('Db3', function () {
+  describe('#connect()', function () {
+    it('should connect to the test db', function (done) {
+      var db = db3.connect({user: 'root', database : 'test'})
+      db.query('select 1', function (data) {
+        if (!data || !data[0])
+          return done(new Error('test db is not working'))
+        done()
+      })
+    })
+  })
+  describe('#end()', function () {
+    it('should connect to the test db and then disconnect', function (done) {
+      var db = db3.connect({user: 'root', database : 'test'})
+      db.end(function () {done()})
+    })
+  })
   describe('#insert()', function () {
     it('should insert empty item', function (done) {
       db.insert('test', function (data) {
@@ -61,7 +77,7 @@ describe('Db3', function (){
     })
   })
   describe('#save()', function () {
-    it('should save item, and insert a new item', function (done) {
+    it('should insert a new item', function (done) {
       db.save('test', function (data) {
         if (!data.insertId)
           return done(new Error('no insert id'))
@@ -72,7 +88,7 @@ describe('Db3', function (){
         })
       })
     })
-    it('should save item, and update an existing item', function (done) {
+    it('should update an existing item', function (done) {
       db.save('test', function (data) {
         if (!data.insertId)
           return done(new Error('no insert id'))
@@ -105,6 +121,15 @@ describe('Db3', function (){
     it('should count items with name "test" in a table', function (done) {
       db.count('test', {name: "test"}, function (data) {
         if (!data)
+          return done(new Error('no items found'))
+        done()
+      })
+    })
+  })
+  describe('#query()', function () {
+    it('should return summary data grouped by name', function (done) {
+      db.query('select ??, count(*) from ?? group by ??', ['name', 'test', 'name'], function (data) {
+        if (!data || !data.length)
           return done(new Error('no items found'))
         done()
       })
