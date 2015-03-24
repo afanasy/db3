@@ -2,16 +2,15 @@ var
   mysql = require('mysql'),
   _ = require('underscore')
 
-var db3 = function (d) {
+var Db3 = function (d) {
   this.db = mysql.createPool(d)
   return this
 }
 
-_.extend(db3.prototype, {
-  end: function () {
-    return this.db.end()
-  },
+_.extend(Db3.prototype, {
   cond: function (d) {
+    if (_.isNumber(d) || _.isString(d))
+      d = {id: +d}
     return _.map(d, function (value, key) {return mysql.format('?', _.pick(d, key))}).join(' and ')
   },
   pair: function (key, value, operator, escapeKey, escapeValue) {
@@ -47,11 +46,18 @@ _.extend(db3.prototype, {
     this.query('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
   },
   save: function (table, d, cb) {
+    if (_.isFunction(d)) {
+      cb = d
+      d = undefined
+    }
+    if (!d || !_.size(d))
+      d = {id: null}
+    var pair = this.pair
     var values = _.map(d, function (value, key) {
       if ((key == 'id') && (value === false))
         return '`' + key + '` = last_insert_id(' + key + ')'
       else
-        return this.pair(key, value)
+        return pair(key, value)
     })
     values = values.join(', ')
     this.query('save', 'insert ' + mysql.escapeId(table) + ' set ' + values + ' on duplicate key update ' + values, cb)
@@ -65,6 +71,7 @@ _.extend(db3.prototype, {
       cb = field
       field = undefined
     }
+    cond = this.cond(cond)
     if (_.isString(field))
       field = [field]
     if (_.isArray(field))
@@ -73,7 +80,6 @@ _.extend(db3.prototype, {
           return mysql.escapeId(field)
         return d
       }).join(', ')
-    cond = this.cond(cond)
     var query = 'select ' + (field || '*') + ' from ' + mysql.escapeId(table)
     if (cond)
       query += ' where ' + cond
@@ -94,4 +100,4 @@ _.extend(db3.prototype, {
   }
 })
 
-module.exports = db3
+module.exports = Db3
