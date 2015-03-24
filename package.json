@@ -1,0 +1,23 @@
+{
+  "name": "db3",
+  "version": "1.0.0",
+  "description": "neat db interface for node-mysql",
+  "main": "db3.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/afanasy/db3.git"
+  },
+  "author": "Afanasy Kurakin <afanasy@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/afanasy/db3/issues"
+  },
+  "homepage": "https://github.com/afanasy/db3",
+  "dependencies": {
+    "mysql": "^2.5.5",
+    "underscore": "^1.8.2"
+  }
+}
