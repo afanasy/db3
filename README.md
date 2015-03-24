@@ -11,7 +11,8 @@ npm install db3
 
 ## Connecting
 ```
-var db = new require('db3')({host: 'example.org', user: 'bob', password: 'secret'})
+var Db3 = require('db3')
+var db = new Db3({host: 'example.org', user: 'bob', password: 'secret'})
 ```
 connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
 
@@ -41,6 +42,13 @@ db.delete('person', {name: 'Alice'}, function (data) {
 //db.save(table, data, callback)
 db.save('person', {id: 1, name: 'Bob'}, function (data) {
   console.log('saved row with id: ' + data.insertId)
+})
+```
+## Selecting
+//db.select(table, condition, field, callback)
+```
+db.select('persons', {name: 'Bob'}, ['name', 'gender'], function (data) {
+  console.log(data)
 })
 ```
 ## Counting (select count(*) from table)
