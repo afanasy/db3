@@ -17,11 +17,11 @@
   },
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
-    "mysql": "^2.5.5",
-    "underscore": "^1.8.2"
+    "mysql": "*",
+    "underscore": "*"
   },
   "devDependencies": {
-    "chai": "^2.1.2",
-    "mocha": "^2.2.1"
+    "chai": "*",
+    "mocha": "*"
   }
 }
