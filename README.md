@@ -3,9 +3,6 @@
 [![Node.js Version][node-version-image]][node-version-url]
 [![Linux Build][travis-image]][travis-url]
 
-# db3
-neat db interface for [node-mysql](https://github.com/felixge/node-mysql)
-
 ## Introduction
 Db3 replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used query patterns, rather than trying to cover the whole SQL specification - so some operations are not supported (you can write them in SQL directly). Db3 is based on excellent [node-mysql](https://github.com/felixge/node-mysql) lib.
 
@@ -19,7 +16,7 @@ npm install db3
 var db3 = require('db3')
 var db = db3.connect({host: 'example.org', user: 'bob', password: 'secret', database : 'test'})
 ```
-connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
+connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections).
 
 ##Disconnecting
 ```
