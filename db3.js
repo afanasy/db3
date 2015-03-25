@@ -28,6 +28,33 @@ _.extend(Db3.prototype, {
   end: function (cb) {
     return this.db.end(cb)
   },
+  createTable: function (table, field, cb) {
+    if (_.isFunction(field)) {
+      cb = field
+      field = undefined
+    }
+    if (!_.size(field))
+      field = ['id']
+    field = _.map(field, function (field) {
+      var type = 'text'
+      if (field == 'id')
+        type = 'bigint primary key auto_increment'
+      if (field.match(/Id$/))
+        type = 'bigint'
+      return mysql.escapeId(field) + ' ' + type
+    }).join(', ')
+    this.q('createTable', 'create table ' + mysql.escapeId(table) + ' (' + field + ')', cb)
+  },
+  dropTable: function (table, cb) {
+    this.q('dropTable', mysql.format('drop table ??', table), cb)
+  },
+  tableExists: function (table, cb) {
+    this.q('tableExists', mysql.format('select 1 from ?? limit 1', table), function (data, err) {
+      if (!err)
+        return cb(true)
+      cb(false)
+    })
+  },
   insert: function (table, d, cb) {
     if (_.isFunction(d)) {
       cb = d

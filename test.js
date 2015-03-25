@@ -4,6 +4,13 @@ var
   db = db3.connect({user: 'root', database : 'test'})
 
 describe('Db3', function () {
+  before(function (done) {
+    db.dropTable('test', function () {
+      db.createTable('test', ['id', 'name'], function () {
+        done()
+      })
+    })
+  })
   describe('#connect()', function () {
     it('should connect to the test db', function (done) {
       var db = db3.connect({user: 'root', database : 'test'})
@@ -18,6 +25,41 @@ describe('Db3', function () {
     it('should connect to the test db and then disconnect', function (done) {
       var db = db3.connect({user: 'root', database : 'test'})
       db.end(function () {done()})
+    })
+  })
+  describe('#createTable()', function () {
+    it('should create table', function (done) {
+      var table = 'test' + +(new Date)
+      db.createTable(table, function () {
+        db.tableExists(table, function (exists) {
+          if (!exists)
+            return done(new Error('"' + table + '" table does not exist'))
+          return done()
+        })
+      })
+    })
+  })
+  describe('#dropTable()', function () {
+    it('should create and drop table', function (done) {
+      var table = 'test' + +(new Date)
+      db.createTable(table, function () {
+        db.dropTable(table, function () {
+          db.tableExists(table, function (exists) {
+            if (exists)
+              return done(new Error('"' + table + '" table was not dropped'))
+            return done()
+          })
+        })
+      })
+    })
+  })
+  describe('#tableExists()', function () {
+    it('should check if random table exists', function (done) {
+      db.tableExists('test' + +(new Date), function (exists) {
+        if (exists)
+          return done(new Error('"' + table + '" table exists'))
+        return done()
+      })
     })
   })
   describe('#insert()', function () {
