@@ -126,3 +126,12 @@ db.query('select ??, count(*) from ?? group by ??', ['gender', 'person', 'gender
   console.log(data)
 })
 ```
+
+[npm-image]: https://img.shields.io/npm/v/db3.svg
+[npm-url]: https://npmjs.org/package/db3
+[downloads-image]: https://img.shields.io/npm/dm/db3.svg
+[downloads-url]: https://npmjs.org/package/db3
+[node-version-image]: http://img.shields.io/node/v/db3.svg
+[node-version-url]: http://nodejs.org/download/
+[travis-image]: https://img.shields.io/travis/afanasy/db3/master.svg?label=linux
+[travis-url]: https://travis-ci.org/afanasy/db3
