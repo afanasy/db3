@@ -16,9 +16,9 @@ npm install db3
 var db3 = require('db3')
 var db = db3.connect({host: 'example.org', user: 'bob', password: 'secret', database : 'test'})
 ```
-connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections).
+connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
 
-##Disconnecting
+## Disconnecting
 ```
 //db.end(cb)
 db.end(function (err) {
