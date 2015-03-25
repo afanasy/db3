@@ -1,6 +1,6 @@
 {
   "name": "db3",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "neat db interface for node-mysql",
   "main": "db3.js",
   "scripts": {
@@ -23,5 +23,8 @@
   "devDependencies": {
     "chai": "*",
     "mocha": "*"
+  },
+  "engines": {
+    "node": ">= 0.6"
   }
 }

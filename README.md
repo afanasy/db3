@@ -133,5 +133,5 @@ db.query('select ??, count(*) from ?? group by ??', ['gender', 'person', 'gender
 [downloads-url]: https://npmjs.org/package/db3
 [node-version-image]: http://img.shields.io/node/v/db3.svg
 [node-version-url]: http://nodejs.org/download/
-[travis-image]: https://img.shields.io/travis/afanasy/db3/master.svg?label=linux
+[travis-image]: https://img.shields.io/travis/afanasy/db3/master.svg
 [travis-url]: https://travis-ci.org/afanasy/db3
