@@ -49,6 +49,34 @@ db.dropTable('person', function () {
 })
 ```
 
+## Truncating table (truncate table ...)
+```javascript
+//db.truncateTable(table, callback)
+//truncate table `person`;
+db.truncateTable('person', function () {
+  console.log('table `person` truncated')
+})
+```
+
+## Copying table (create table ... like ... insert)
+```javascript
+//db.copyTable(from, to, callback)
+//create table `personCopy` like `person`; insert `personCopy` select * from `person`;
+db.copyTable('person', 'personCopy', function () {
+  console.log('copied table `person` and all its data to table `personCopy`')
+})
+```
+
+## Moving table (rename table ...)
+```javascript
+//db.moveTable(from, to, callback)
+//rename table `person` to `nosrep`;
+db.moveTable('person', 'nosrep', function () {
+  console.log('moved table `person` and all its data to table `nosrep`')
+})
+```
+
+
 ## Checking if table exists
 ```javascript
 //db.tableExists(table, callback)

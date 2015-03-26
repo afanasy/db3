@@ -55,6 +55,38 @@ _.extend(Db3.prototype, {
       cb(false)
     })
   },
+  truncateTable: function (table, cb) {
+    this.q('truncateTable', mysql.format('truncate table ??', table), cb)
+  },
+  copyTable: function (from, to, cb) {
+    if (_.isFunction(to)) {
+      cb = to
+      to = undefined
+    }
+    if (!to)
+      to = from + +(new Date)
+    var self = this
+    self.q('copyTable', mysql.format('create table ?? like ??', [to, from]), function () {
+      self.q('copyTable', mysql.format('insert ?? select * from ??', [to, from]), function (data, err) {
+        data = data || {}
+        data.table = to
+        cb(data, err)
+      })
+    })
+  },
+  moveTable: function (from, to, cb) {
+    if (_.isFunction(to)) {
+      cb = to
+      to = undefined
+    }
+    if (!to)
+      to = from + +(new Date)
+    this.q('moveTable', mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
+      data = data || {}
+      data.table = to
+      cb(data, err)
+    })
+  },
   insert: function (table, d, cb) {
     if (_.isFunction(d)) {
       cb = d
