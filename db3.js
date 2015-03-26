@@ -12,17 +12,21 @@ var Db3 = function (d) {
 }
 
 _.extend(Db3.prototype, {
-  cond: function (d) {
+  cond: function (d, set) {
+    var delimiter = ' and '
+    if (set)
+      delimiter = ', '
     if (_.isNumber(d) || _.isString(d))
       d = {id: +d}
-    return _.map(d, function (value, key) {return mysql.format('?', _.pick(d, key))}).join(' and ')
+    var pair = this.pair
+    return _.map(d, function (value, key) {return pair(key, value)}).join(delimiter)
   },
   pair: function (key, value, operator, escapeKey, escapeValue) {
-    operator = operator || ' = '
+    operator = operator || '='
     if (escapeKey !== false)
-      key = mysql.escapeId(key)
+      key = mysql.escapeId(String(key))
     if (escapeValue !== false)
-      value = mysql.escape(value)
+      value = mysql.escape(String(value))
     return key + ' ' + operator + ' ' + value
   },
   end: function (cb) {
@@ -94,12 +98,12 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    this.q('insert', mysql.format('insert ?? set ?', [table, d]), cb)
+    this.q('insert', mysql.format('insert ?? set ', table) + this.cond(d, true), cb)
   },
   update: function (table, cond, d, cb)  {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    this.q('update', mysql.format('update ?? set ?', [table, d]) + ' where ' + this.cond(cond), cb)
+    this.q('update', mysql.format('update ?? set ', table) + this.cond(d, true) + ' where ' + this.cond(cond), cb)
   },
   delete: function (table, cond, cb) {
     if (_.isString(cond) || _.isNumber(cond))
