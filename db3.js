@@ -19,21 +19,32 @@ var Db3 = function (d) {
 }
 
 _.extend(Db3.prototype, {
+  escape: function (value) {
+    if (_.isNaN(value) || _.isNull(value) || _.isUndefined(value))
+      return 'null'
+    if (_.isNumber(value))
+      return value
+    if (_.isBoolean(value))
+      return +value
+    return mysql.escape(String(value))
+  },
   cond: function (d, set) {
     var delimiter = ' and '
     if (set)
       delimiter = ', '
     if (_.isNumber(d) || _.isString(d))
       d = {id: +d}
-    var pair = this.pair
-    return _.map(d, function (value, key) {return pair(key, value)}).join(delimiter)
+    var self = this
+    return _.map(d, function (value, key) {return self.pair(key, value, null, true, true, set)}).join(delimiter)
   },
-  pair: function (key, value, operator, escapeKey, escapeValue) {
+  pair: function (key, value, operator, escapeKey, escapeValue, set) {
     operator = operator || '='
     if (escapeKey !== false)
       key = mysql.escapeId(String(key))
     if (escapeValue !== false)
-      value = mysql.escape(String(value))
+      value = this.escape(value)
+    if (!set && (value == 'null') && (operator == '='))
+      operator = 'is'
     return key + ' ' + operator + ' ' + value
   },
   end: function (cb) {
@@ -136,12 +147,12 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    var pair = this.pair
+    var self = this
     var values = _.map(d, function (value, key) {
       if ((key == 'id') && (value === false))
         return '`' + key + '` = last_insert_id(' + key + ')'
       else
-        return pair(key, value)
+        return self.pair(key, value, null, true, true, true)
     })
     values = values.join(', ')
     this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + values + ' on duplicate key update ' + values, cb)
