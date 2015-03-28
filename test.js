@@ -1,13 +1,25 @@
 var
   should = require('chai').expect(),
+  _ = require('underscore'),
   db3 = require('./db3.js'),
   db = db3.connect({user: 'root', database : 'test'})
 
 describe('Db3', function () {
   before(function (done) {
     db.dropTable('test', function () {
-      db.createTable('test', ['id', 'name'], function () {
-        done()
+      db.createTable('test', function () {
+        db.dropTable('person', function () {
+          db.createTable('person', ['id', 'name', 'gender'], function () {
+            db.insert('person', [
+              {name: 'God', gender: 'god'},
+              {name: 'Adam', gender: 'male'},
+              {name: 'Eve', gender: 'female'},
+              {name: 'Cain', gender: 'male'},
+              {name: 'Able', gender: 'male'},
+              {name: 'Seth', gender: 'male'}
+            ], done)
+          })
+        })
       })
     })
   })
@@ -215,10 +227,76 @@ describe('Db3', function () {
   })
   describe('#count()', function () {
     it('should count items in a table', function (done) {
-      db.count('test', {name: "test"}, function (data) {
-        if (!data)
+      db.count('person', {name: 'God'}, function (count) {
+        if (!count)
           return done(new Error('no items found'))
         done()
+      })
+    })
+  })
+  describe('#groupBy()', function () {
+    var groupBy = {
+      count: {
+        field: '*',
+        fullTable: 6,
+        filtered: 1,
+        grouped: {gender: 'female', count: 1},
+        filteredAndGrouped: {gender: 'male', count: 4}
+      },
+      min: {
+        fullTable: 1,
+        filtered: 2,
+        grouped: {gender: 'female', min: 3},
+        filteredAndGrouped: {gender: 'male', min: 4}
+      },
+      max: {
+        fullTable: 6,
+        filtered: 2,
+        grouped: {gender: 'female', max: 3},
+        filteredGrouped: {gender: 'male', max: 4}
+      },
+      avg: {
+        fullTable: 3.5,
+        filtered: 2,
+        grouped: {gender: 'female', avg: 3},
+        filteredGrouped: {gender: 'male', avg: 4}
+      },
+      sum: {
+        fullTable: 21,
+        filtered: 2,
+        grouped: {gender: 'female', sum: 3.0},
+        filteredGrouped: {gender: 'male', sum: 4}
+      }
+    }
+    _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
+      var name = func + '(' + (groupBy[func].field || 'id') + ')'
+      it('should select ' + name  + ' from table', function (done) {
+        db[func]('person', function (data) {
+          if (data != groupBy[func].fullTable)
+            return done(new Error(func + ' returned wrong value ' + data))
+          return done()
+        })
+      })
+      it('should select ' + name + ' from table filtered by condition', function (done) {
+        db[func]('person', {name: 'Adam'}, function (data) {
+          if (data != groupBy[func].filtered)
+            return done(new Error(func + ' returned wrong value ' + data))
+          return done()
+        })
+      })
+      it('should select ' + name + ' from table grouped by field', function (done) {
+        db[func]('person', ['gender', 'id'], function (data) {
+          if (!_.findWhere(data, groupBy[func].grouped))
+            return done(new Error(func + ' returned wrong value'))
+          return done()
+        })
+      })
+      it('should select ' + name + ' from table filtered by condition and grouped by field', function (done) {
+        db[func]('person', {name: 'Cain'}, ['gender', 'id'], function (data) {
+          if (!_.findWhere(data, groupBy[func].filteredGrouped))
+            return done(new Error(func + ' returned wrong value'))
+          return done()
+        })
       })
     })
   })

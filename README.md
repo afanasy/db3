@@ -131,23 +131,54 @@ db.save('person', {id: 1, name: 'Bob'}, function (data) {
 db.select('person', {name: 'Bob'}, ['name', 'gender'], function (data) {
   console.log('selected name, gender fields from table `person`, where `name` = "Bob"')
   console.log(data)
+  //[{name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'female'}, ...]
 })
 ```
 
-## Counting (select count(*) from table)
+## Group by functions (count, min, max, avg, sum)
 ```javascript
-//db.count(table, condition, callback)
+//db[functionName](table, condition, field, callback)
 //select count(*) from `person` where `name` = "Bob";
 db.count('person', {name: 'Bob'}, function (count) {
   console.log('there are ' + count + ' persons named "Bob"')  
 })
+//select min(id) from `person` where `name` = "Bob";
+db.min('person', {name: 'Bob'}, function (min) {
+  console.log('first "Bob" has id ' + min)  
+})
+//select name, avg(age) from `person` where `name` = "Bob";
+db.min('person', {name: 'Bob'}, ['age'], function (min) {
+  console.log('Bob average age is ' + min)  
+})
+//select name, sum(income) from `person` where `gender` = "male" group by name;
+db.min('person', {city: 'Hong Kong', year: '2015'}, ['gender', 'income'], function (data) {
+  console.log('total income of HK citizens by gender for 2015')  
+  console.log(data)
+  //[{male: someNumber}, {female: someNumber}]
+})
+
 ```
+
+## Minimum value (select max(field) from table)
+```javascript
+//db.min(table, condition, callback)
+//select min(id) from `person` where `name` = "Bob";
+db.min('person', {name: 'Bob'}, function (count) {
+  console.log('there are ' + count + ' persons named "Bob"')  
+})
+//select min(age) from `person` where `name` = "Bob";
+db.min('person', {name: 'Bob'}, '',function (count) {
+  console.log('there are ' + count + ' persons named "Bob"')  
+})
+```
+
 
 ## SQL query
 Proxied to the underlying node-mysql lib, but with swapped 'err' and 'data' arguments (more info [here](https://github.com/felixge/node-mysql#performing-queries))
 ```javascript
-db.query('select ??, count(*) from ?? group by ??', ['gender', 'person', 'gender'], function (data) {
+db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10', ['gender', 'person', 'gender'], function (data) {
   console.log(data)
+  //[{gender: 'male', count: someNumber}, {gender: 'female', count: someNumber}, ...]
 })
 ```
 

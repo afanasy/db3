@@ -1,6 +1,7 @@
 var
   mysql = require('mysql'),
-  _ = require('underscore')
+  _ = require('underscore'),
+  async = require('async')
 
 exports.connect = function (d) {
   return new Db3(mysql.createPool(d))
@@ -8,6 +9,12 @@ exports.connect = function (d) {
 
 var Db3 = function (d) {
   this.db = d
+  var self = this
+  _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
+    self[func] = function (table, cond, field, cb) {
+      return self.groupBy(func, table, cond, field, cb)
+    }
+  })
   return this
 }
 
@@ -33,12 +40,16 @@ _.extend(Db3.prototype, {
     return this.db.end(cb)
   },
   createTable: function (table, field, cb) {
+    if (_.isFunction(table)) {
+      field = table
+      table = 'table' + +(new Date)
+    }
     if (_.isFunction(field)) {
       cb = field
       field = undefined
     }
     if (!_.size(field))
-      field = ['id']
+      field = ['id', 'name']
     field = _.map(field, function (field) {
       var type = 'text'
       if (field == 'id')
@@ -47,7 +58,11 @@ _.extend(Db3.prototype, {
         type = 'bigint'
       return mysql.escapeId(field) + ' ' + type
     }).join(', ')
-    this.q('createTable', 'create table ' + mysql.escapeId(table) + ' (' + field + ')', cb)
+    this.q('createTable', 'create table ' + mysql.escapeId(table) + ' (' + field + ')', function (data, err) {
+      data = data || {}
+      data.table = table
+      cb(data, err)
+    })
   },
   dropTable: function (table, cb) {
     this.q('dropTable', mysql.format('drop table ??', table), cb)
@@ -98,6 +113,10 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
+    if (_.isArray(d)) {
+      var self = this
+      return async.eachSeries(d, function (data, done) {self.insert(table, data, function () {done()})}, function () {cb()})
+    }
     this.q('insert', mysql.format('insert ?? set ', table) + this.cond(d, true), cb)
   },
   update: function (table, cond, d, cb)  {
@@ -129,6 +148,7 @@ _.extend(Db3.prototype, {
   },
   select: function (table, cond, field, cb) {
     if (_.isFunction(cond)) {
+      cb = field
       field = cond
       cond = undefined
     }
@@ -137,30 +157,56 @@ _.extend(Db3.prototype, {
       field = undefined
     }
     cond = this.cond(cond)
+    field = field || '*'
     if (_.isString(field))
       field = [field]
-    if (_.isArray(field))
-      field = _.map(field, function (d) {
-        if (d != '*')
-          return mysql.escapeId(field)
-        return d
-      }).join(', ')
-    var query = 'select ' + (field || '*') + ' from ' + mysql.escapeId(table)
+    field = _.map(field, function (d) {
+      if (d != '*')
+        return mysql.escapeId(field)
+      return d
+    }).join(', ')
+    var query = 'select ' + field + ' from ' + mysql.escapeId(table)
     if (cond)
       query += ' where ' + cond
     this.q('select', query, cb)
   },
-  count: function (table, cond, cb) {
-    if (_.isFunction(cond)) {
-      cb = cond
+  groupBy: function (func, table, cond, field, cb) {
+    if (_.isFunction(cond) || _.isArray(cond)) {
+      cb = field
+      field = cond
       cond = undefined
     }
+    if (_.isFunction(field)) {
+      cb = field
+      field = undefined
+    }
     cond = this.cond(cond)
-    var query = 'select count(*) as count from ' + mysql.escapeId(table)
+    var defaultField = 'id'
+    if (func == 'count')
+      defaultField = '*'
+    field = field || defaultField
+    if (_.isString(field))
+      field = [field]
+    var lastField = field.pop()
+    if (func != 'count')
+      lastField = mysql.escapeId(lastField)
+    field = _.map(field, function (d, i) {return mysql.escapeId(field)}).join(', ')
+    var query = 'select ' + field
+    if (field.length)
+      query += ', '
+    query += func + '(' + lastField + ') as ' + func + ' from ' + mysql.escapeId(table)
     if (cond)
       query += ' where ' + cond
-    this.q('count', query, function (d) {
-      cb && cb((d && d[0] && d[0].count) || 0)
+    if (field.length)
+      query += ' group by ' + field
+    this.q(func, query, function (data, err) {
+      if (!field.length) {
+        var value = data && data[0] && _.values(data[0])[0]
+        if (func == 'count')
+          value = value || 0
+        return cb(value, err, field)
+      }
+      cb(data, err)
     })
   },
   q: function (name, query, cb) {
