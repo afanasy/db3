@@ -2,11 +2,31 @@
 [![Node.js Version][node-version-image]][node-version-url]
 [![Linux Build][travis-image]][travis-url]
 
+## Table of Contents
+
+ * [Introduction](#introduction)
+ * [Installation](#installation)
+ * [Connecting](#connecting)
+ * [Disconnecting](#disconnecting)
+ * [Creating table](#creating-table)
+ * [Droping table](#droping-table)
+ * [Truncating table](#truncating-table)
+ * [Copying table](#copying-table)
+ * [Moving table](#moving-table)
+ * [Checking if table exists](#checking-if-table-exists)
+ * [Adding](#adding)
+ * [Updating](#updating)
+ * [Deleting](#deleting)
+ * [Saving](#saving)
+ * [Selecting](#selecting)
+ * [Aggregate functions](#aggregate-functions)
+ * [SQL query](#sql-query)
+
 ## Introduction
 Db3 replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used SQL patterns, rather than trying to cover the whole SQL specification. It may be useful for those who doesn't know or doesn't want to use SQL, but still interested in using mysql as backend db. Db3 is based on excellent [node-mysql](https://github.com/felixge/node-mysql) lib. For PHP alternative check out the [Medoo](http://medoo.in/) project.
 
 ## Installation
-```
+```sh
 npm install db3
 ```
 
@@ -24,7 +44,8 @@ db.end(function (err) {
   console.log('all connections closed gracefully')
 })
 ```
-## Creating table (create table ...)
+## Creating table
+SQL: create table ...
 ```javascript
 //db.createTable(table, fields, callback)
 /*
@@ -40,7 +61,8 @@ db.createTable('person', ['id', 'name', 'gender'], function (data) {
 ```
 all fields will be of `text` type, except `id` (will be "bigint primary key auto_increment") and fields matching /Id$/, like userId (will become bigint)
 
-## Droping table (drop table ...)
+## Droping table
+SQL: drop table ...
 ```javascript
 //db.dropTable(table, callback)
 //drop table `person`;
@@ -49,7 +71,8 @@ db.dropTable('person', function () {
 })
 ```
 
-## Truncating table (truncate table ...)
+## Truncating table
+SQL: truncate table ...
 ```javascript
 //db.truncateTable(table, callback)
 //truncate table `person`;
@@ -58,7 +81,8 @@ db.truncateTable('person', function () {
 })
 ```
 
-## Copying table (create table ... like ... insert)
+## Copying table
+SQL: create table ... like ... insert
 ```javascript
 //db.copyTable(from, to, callback)
 //create table `personCopy` like `person`; insert `personCopy` select * from `person`;
@@ -67,7 +91,8 @@ db.copyTable('person', 'personCopy', function () {
 })
 ```
 
-## Moving table (rename table ...)
+## Moving table
+SQL: rename table ...
 ```javascript
 //db.moveTable(from, to, callback)
 //rename table `person` to `nosrep`;
@@ -88,7 +113,8 @@ db.tableExists('person', function (exists) {
 })
 ```
 
-## Adding (insert ...)
+## Adding
+SQL: insert ...
 ```javascript
 //db.insert(table, data, callback)
 //insert `person` set `name` = "Bob";
@@ -97,7 +123,8 @@ db.insert('person', {name: 'Bob'}, function (data) {
 })
 ```
 
-## Updating (update ...)
+## Updating
+SQL: update ...
 ```javascript
 //db.update(table, condition, data, callback)
 //update `person` set `name` = "Bob" where `name` = "Alice";
@@ -106,7 +133,8 @@ db.update('person', {name: 'Bob'}, {name: 'Alice'}, function (data) {
 })
 ```
 
-## Deleting (delete from ...)
+## Deleting
+SQL: delete from ...
 ```javascript
 //db.delete(table, condition, callback)
 //delete from `person` where `name` = "Alice";
@@ -115,7 +143,8 @@ db.delete('person', {name: 'Alice'}, function (data) {
 })
 ```
 
-## Saving (insert ... on duplicate key update ...)
+## Saving
+SQL: insert ... on duplicate key update ...
 ```javascript
 //db.save(table, data, callback)
 //insert `person` set `id` = 1, `name` = "Bob" on duplicate key update `id` = 1, `name` = "Bob";
@@ -135,7 +164,8 @@ db.select('person', {name: 'Bob'}, ['name', 'gender'], function (data) {
 })
 ```
 
-## Group by functions (count, min, max, avg, sum)
+## Aggregate functions
+Supported functions: count, min, max, avg, sum
 ```javascript
 //db[functionName](table, condition, field, callback)
 //select count(*) from `person` where `name` = "Bob";
