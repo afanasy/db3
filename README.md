@@ -158,20 +158,6 @@ db.min('person', {city: 'Hong Kong', year: '2015'}, ['gender', 'income'], functi
 })
 ```
 
-## Minimum value (select max(field) from table)
-```javascript
-//db.min(table, condition, callback)
-//select min(id) from `person` where `name` = "Bob";
-db.min('person', {name: 'Bob'}, function (count) {
-  console.log('there are ' + count + ' persons named "Bob"')  
-})
-//select min(age) from `person` where `name` = "Bob";
-db.min('person', {name: 'Bob'}, '',function (count) {
-  console.log('there are ' + count + ' persons named "Bob"')  
-})
-```
-
-
 ## SQL query
 Proxied to the underlying node-mysql lib, but with swapped 'err' and 'data' arguments (more info [here](https://github.com/felixge/node-mysql#performing-queries))
 ```javascript
