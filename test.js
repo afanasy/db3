@@ -110,17 +110,17 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#moveTable()', function () {
-    it('should move table and all its data', function (done) {
-      var table = 'moveTable' + +(new Date)
+  describe('#renameTable()', function () {
+    it('should rename table', function (done) {
+      var table = 'renameTable' + +(new Date)
       db.createTable(table, function () {
         db.insert(table, function (data) {
           if (!data.insertId)
             return done(new Error('failed to insert test item'))
-          db.moveTable(table, function (data) {
+          db.renameTable(table, function (data) {
             db.count(data.table, function (count) {
               if (!count)
-                return done(new Error('moved table is absent or has no rows'))
+                return done(new Error('renamed table is absent or has no rows'))
               done()
             })
           })

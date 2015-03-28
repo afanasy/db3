@@ -93,14 +93,14 @@ _.extend(Db3.prototype, {
       })
     })
   },
-  moveTable: function (from, to, cb) {
+  renameTable: function (from, to, cb) {
     if (_.isFunction(to)) {
       cb = to
       to = undefined
     }
     if (!to)
       to = from + +(new Date)
-    this.q('moveTable', mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
+    this.q('renameTable', mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
       data = data || {}
       data.table = to
       cb(data, err)

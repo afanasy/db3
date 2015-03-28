@@ -12,7 +12,7 @@
  * [Droping table](#droping-table)
  * [Truncating table](#truncating-table)
  * [Copying table](#copying-table)
- * [Moving table](#moving-table)
+ * [Renaming table](#renaming-table)
  * [Checking if table exists](#checking-if-table-exists)
  * [Adding](#adding)
  * [Updating](#updating)
@@ -91,16 +91,15 @@ db.copyTable('person', 'personCopy', function () {
 })
 ```
 
-## Moving table
+## Renaming table
 SQL: rename table ...
 ```javascript
-//db.moveTable(from, to, callback)
+//db.renameTable(from, to, callback)
 //rename table `person` to `nosrep`;
 db.moveTable('person', 'nosrep', function () {
-  console.log('moved table `person` and all its data to table `nosrep`')
+  console.log('renamed table `person` and all its data to table `nosrep`')
 })
 ```
-
 
 ## Checking if table exists
 ```javascript
