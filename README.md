@@ -147,8 +147,8 @@ db.min('person', {name: 'Bob'}, function (min) {
   console.log('first "Bob" has id ' + min)  
 })
 //select name, avg(age) from `person` where `name` = "Bob";
-db.min('person', {name: 'Bob'}, ['age'], function (min) {
-  console.log('Bob average age is ' + min)  
+db.min('person', {name: 'Bob'}, ['age'], function (avg) {
+  console.log('Bob average age is ' + avg)  
 })
 //select name, sum(income) from `person` where `city` = "Hong Kong" group by name;
 db.min('person', {city: 'Hong Kong', year: '2015'}, ['gender', 'income'], function (data) {
