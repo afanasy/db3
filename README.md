@@ -180,8 +180,8 @@ db.min('person', {name: 'Bob'}, ['age'], function (avg) {
   console.log('Bob average age is ' + avg)  
 })
 //select name, sum(income) from `person` where `city` = "Hong Kong" group by name;
-db.min('person', {city: 'Hong Kong', year: '2015'}, ['gender', 'income'], function (data) {
-  console.log('total income of HK citizens by gender for 2015')  
+db.min('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function (data) {
+  console.log('total income of HK citizens by name for 2015')  
   console.log(data)
   //[{name: 'Yun', sum: someNumber}, {name: 'Tony', sum: someNumber}, {name: 'Donnie', sum: someNumber}, ...]
 })
