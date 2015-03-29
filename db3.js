@@ -28,7 +28,15 @@ _.extend(Db3.prototype, {
       return +value
     if (!set) {
       if (_.isArray(value))
-        return '(' + _.map(value, function (d) {return this.escape(d)}).join(', ') + ')'
+        return '(' + _.map(value, function (d) {return this.escape(d, set)}).join(', ') + ')'
+      if (_.isObject(value)) {
+        if (!_.isUndefined(value.from) && !_.isUndefined(value.to))
+          return this.escape(value.from, set) + ' and ' + this.escape(value.to, set)
+        if (!_.isUndefined(value.from))
+          return this.escape(value.from, set)
+        if (!_.isUndefined(value.to))
+          return this.escape(value.to, set)
+      }
     }
     return mysql.escape(String(value))
   },
@@ -48,6 +56,16 @@ _.extend(Db3.prototype, {
         operator = 'is'
       if (_.isArray(value))
         operator = 'in'
+      if (_.isObject(value)) {
+        if (!_.isUndefined(value.from) && !_.isUndefined(value.to))
+          operator = 'between'
+        else {
+          if (!_.isUndefined(value.from))
+            operator = '>='
+          if (!_.isUndefined(value.to))
+            operator = '<='
+        }
+      }
     }
     if (escapeKey !== false)
       key = mysql.escapeId(String(key))

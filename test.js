@@ -219,10 +219,31 @@ describe('Db3', function () {
         done()
       })
     })
-    it('should select an item from table using in ()', function (done) {
+    it('should select an item from table using "in ()"', function (done) {
       db.select('person', {id: [1, 2]}, function (data) {
         if (!data || !(data.length == 2))
-          return done(new Error('select with in () failed'))
+          return done(new Error('select with "in ()" failed'))
+        done()
+      })
+    })
+    it('should select an item from table using "between"', function (done) {
+      db.select('person', {id: {from: 2, to: 4}}, function (data) {
+        if (!data || !(data.length == 3))
+          return done(new Error('select with "between" failed'))
+        done()
+      })
+    })
+    it('should select an item from table using ">="', function (done) {
+      db.select('person', {id: {from: 2}}, function (data) {
+        if (!data || !(data.length == 5))
+          return done(new Error('select with ">=" failed'))
+        done()
+      })
+    })
+    it('should select an item from table using "<="', function (done) {
+      db.select('person', {id: {to: 2}}, function (data) {
+        if (!data || !(data.length == 2))
+          return done(new Error('select with "<=" failed'))
         done()
       })
     })
