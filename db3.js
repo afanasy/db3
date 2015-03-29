@@ -19,13 +19,17 @@ var Db3 = function (d) {
 }
 
 _.extend(Db3.prototype, {
-  escape: function (value) {
+  escape: function (value, set) {
     if (_.isNaN(value) || _.isNull(value) || _.isUndefined(value))
       return 'null'
     if (_.isNumber(value))
       return value
     if (_.isBoolean(value))
       return +value
+    if (!set) {
+      if (_.isArray(value))
+        return '(' + _.map(value, function (d) {return this.escape(d)}).join(', ') + ')'
+    }
     return mysql.escape(String(value))
   },
   cond: function (d, set) {
@@ -39,12 +43,16 @@ _.extend(Db3.prototype, {
   },
   pair: function (key, value, operator, escapeKey, escapeValue, set) {
     operator = operator || '='
+    if (!set) {
+      if ((_.isNaN(value) || _.isNull(value) || _.isUndefined(value)) && (operator == '='))
+        operator = 'is'
+      if (_.isArray(value))
+        operator = 'in'
+    }
     if (escapeKey !== false)
       key = mysql.escapeId(String(key))
     if (escapeValue !== false)
-      value = this.escape(value)
-    if (!set && (value == 'null') && (operator == '='))
-      operator = 'is'
+      value = this.escape(value, set)
     return key + ' ' + operator + ' ' + value
   },
   end: function (cb) {
@@ -167,6 +175,8 @@ _.extend(Db3.prototype, {
       cb = field
       field = undefined
     }
+    if (_.isNumber(cond) || _.isString(cond))
+      cond = {id: cond}
     cond = this.cond(cond)
     field = field || '*'
     if (_.isString(field))

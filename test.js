@@ -213,23 +213,23 @@ describe('Db3', function () {
   })
   describe('#select()', function () {
     it('should select an item from table', function (done) {
-      var item = {name: 'test'}
-      db.insert('test', item, function (data) {
-        if (!data.insertId)
-          return done(new Error('no insert id'))
-        db.select('test', data.insertId, function (data) {
-          if (!data || !data[0] || (data[0].name != item.name))
-            return done(new Error('item was not found'))
-          done()
-        })
+      db.select('person', {name: 'God'}, function (data) {
+        if (!data || !data[0] || (data[0].name != 'God'))
+          return done(new Error('God not found'))
+        done()
       })
     })
-  })
-  describe('#count()', function () {
-    it('should count items in a table', function (done) {
-      db.count('person', {name: 'God'}, function (count) {
-        if (!count)
-          return done(new Error('no items found'))
+    it('should select an item from table using in ()', function (done) {
+      db.select('person', {id: [1, 2]}, function (data) {
+        if (!data || !(data.length == 2))
+          return done(new Error('select with in () failed'))
+        done()
+      })
+    })
+    it('should select an item from table using shorthand id syntax', function (done) {
+      db.select('person', 3, function (data) {
+        if (!data || !data[0] || !(data[0].name == 'Eve'))
+          return done(new Error('Eve not found'))
         done()
       })
     })

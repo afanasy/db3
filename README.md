@@ -161,6 +161,20 @@ db.select('person', {name: 'Bob'}, ['name', 'gender'], function (data) {
   console.log(data)
   //[{name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'female'}, ...]
 })
+//if condition is number or string, then its treated as condition on id field
+//select * from `person` where `id` = 1;
+db.select('person', 1, function (data) {
+  console.log('selected all fields from table `person`, where `id` = 1')
+  console.log(data)
+  //[{id: 1, name: 'Bob', gender: 'male'}]
+})
+//if condition value is an array, its converted to in () statement
+//select * from `person` where `name` in ('Bob', 'Alice');
+db.select('person', {name: ['Bob', 'Alice']}, function (data) {
+  console.log('selected all fields table `person`, where `name` is "Bob" or "Alice"')
+  console.log(data)
+  //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
+})
 ```
 
 ## Aggregate functions
