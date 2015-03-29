@@ -120,6 +120,13 @@ SQL: insert ...
 db.insert('person', {name: 'Bob'}, function (data) {
   console.log('inserted row into table `person` with id ' + data.insertId + ' and `name` set to "Bob"')
 })
+//multiple inserts are supported, executed separately
+//insert `person` set `name` = "Bob";
+//insert `person` set `name` = "Alice";
+db.insert('person', [{name: 'Bob'}, {name: 'Alice'}], function (data) {
+  console.log('inserted 2 rows into table `person` with ids ' + _.pluck(data, insertId))
+})
+
 ```
 
 ## Updating
@@ -161,12 +168,17 @@ db.select('person', {name: 'Bob'}, ['name', 'gender'], function (data) {
   console.log(data)
   //[{name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'female'}, ...]
 })
-//if condition is number or string, then its treated as condition on id field
+//if condition is number or string or array, then its treated as condition on id field
 //select * from `person` where `id` = 1;
 db.select('person', 1, function (data) {
   console.log('selected all fields from table `person`, where `id` = 1')
   console.log(data)
   //[{id: 1, name: 'Bob', gender: 'male'}]
+})
+db.select('person', [1, 2], function (data) {
+  console.log('selected all fields from table `person`, where `id` is 1 or 2')
+  console.log(data)
+  //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
 })
 //if condition value is an array, its converted to in () statement
 //select * from `person` where `name` in ('Bob', 'Alice');

@@ -1,4 +1,7 @@
 var
+  Readable = require('stream').Readable,
+  Writable = require('stream').Writable,
+  util = require('util'),
   mysql = require('mysql'),
   _ = require('underscore'),
   async = require('async')
@@ -144,17 +147,10 @@ _.extend(Db3.prototype, {
     })
   },
   insert: function (table, d, cb) {
-    if (_.isFunction(d)) {
-      cb = d
-      d = undefined
-    }
-    if (!d || !_.size(d))
-      d = {id: null}
-    if (_.isArray(d)) {
-      var self = this
-      return async.eachSeries(d, function (data, done) {self.insert(table, data, function () {done()})}, function () {cb()})
-    }
-    this.q('insert', mysql.format('insert ?? set ', table) + this.cond(d, true), cb)
+    var self = this
+    _.bind(this.toSql.insert, this)(table, d, cb, function (sql, cb) {
+      self.q('insert', sql, cb)
+    })
   },
   update: function (table, cond, d, cb)  {
     if (_.isString(cond) || _.isNumber(cond))
@@ -184,30 +180,10 @@ _.extend(Db3.prototype, {
     this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + values + ' on duplicate key update ' + values, cb)
   },
   select: function (table, cond, field, cb) {
-    if (_.isFunction(cond)) {
-      cb = field
-      field = cond
-      cond = undefined
-    }
-    if (_.isFunction(field)) {
-      cb = field
-      field = undefined
-    }
-    if (_.isNumber(cond) || _.isString(cond))
-      cond = {id: cond}
-    cond = this.cond(cond)
-    field = field || '*'
-    if (_.isString(field))
-      field = [field]
-    field = _.map(field, function (d) {
-      if (d != '*')
-        return mysql.escapeId(field)
-      return d
-    }).join(', ')
-    var query = 'select ' + field + ' from ' + mysql.escapeId(table)
-    if (cond)
-      query += ' where ' + cond
-    this.q('select', query, cb)
+    var self = this
+    _.bind(this.toSql.select, this)(table, cond, field, cb, function (sql, cb) {
+      self.q('select', sql, cb)
+    })
   },
   groupBy: function (func, table, cond, field, cb) {
     if (_.isFunction(cond) || _.isArray(cond)) {
@@ -259,5 +235,80 @@ _.extend(Db3.prototype, {
       values = undefined
     }
     return this.db.query(sql, values, function (err, results, fields) {return cb(results, err, fields)})
+  },
+  toSql: {
+    select: function (table, cond, field, cb, done) {
+      if (_.isFunction(cond)) {
+        cb = field
+        field = cond
+        cond = undefined
+      }
+      if (_.isFunction(field)) {
+        cb = field
+        field = undefined
+      }
+      if (_.isNumber(cond) || _.isString(cond) || _.isArray(cond))
+        cond = {id: cond}
+      cond = this.cond(cond)
+      field = field || '*'
+      if (_.isString(field))
+        field = [field]
+      field = _.map(field, function (d) {
+        if (d != '*')
+          return mysql.escapeId(field)
+        return d
+      }).join(', ')
+      var query = 'select ' + field + ' from ' + mysql.escapeId(table)
+      if (cond)
+        query += ' where ' + cond
+      done(query, cb)
+    },
+    insert: function (table, d, cb, done) {
+      if (_.isFunction(d)) {
+        cb = d
+        d = undefined
+      }
+      if (!d || !_.size(d))
+        d = {id: null}
+      if (_.isArray(d)) {
+        var self = this
+        var insertData = []
+        var insertErr = []
+        return async.eachSeries(d, function (data, done) {
+          self.insert(table, data, function (data, err) {
+            insertData.push(data)
+            insertErr.push(err)
+            done()
+          }
+        )}, function () {cb(insertData, insertErr)})
+      }
+      done('insert ' + mysql.escapeId(table) + ' set ' + this.cond(d, true), cb)
+    }
+  },
+  streamSelect: function (table, cond, field) {
+    var self = this
+    var stream = Readable({objectMode: true})
+    stream._read = function () {}
+    _.bind(self.toSql.select, self)(table, cond, field, null, function (query) {
+        self.db.getConnection(function (err, connection) {
+          connection.query(query).
+            on('result', function (data) {
+              stream.push(data)
+            }).
+            on('end', function () {
+              stream.push(null)
+              connection.release()
+            })
+        })
+    })
+    return stream
+  },
+  streamInsert: function (table) {
+    var self = this
+    var stream = Writable({objectMode: true})
+    stream._write = function (d, encoding, done) {
+      self.insert(table, d, function () {done()})
+    }
+    return stream
   }
 })

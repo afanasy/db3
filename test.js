@@ -17,7 +17,7 @@ describe('Db3', function () {
               {name: 'Cain', gender: 'male'},
               {name: 'Able', gender: 'male'},
               {name: 'Seth', gender: 'male'}
-            ], done)
+            ], function () {done()})
           })
         })
       })
@@ -143,6 +143,15 @@ describe('Db3', function () {
         db.select('test', data.insertId, function (data) {
           if (!data || !data[0] || (data[0].name != 'test'))
             return done(new Error('inserted item has wrong name field'))
+          done()
+        })
+      })
+    })
+    it('should insert multiple items', function (done) {
+      db.insert('test', [{name: 'test1'}, {name: 'test2'}], function (data) {
+        db.select('test', _.pluck(data, 'insertId'), function (data) {
+          if (!data || (data.length != 2))
+            return done(new Error('inserted items not found'))
           done()
         })
       })
@@ -327,6 +336,27 @@ describe('Db3', function () {
         if (!data || !data.length)
           return done(new Error('no items found'))
         done()
+      })
+    })
+  })
+  describe('#streamSelect()', function () {
+    it('should create readable select stream', function (done) {
+      var count = 0
+      db.streamSelect('person').
+        on('data', function (data) {count++}).
+        on('end', function () {
+          if (!count)
+            return done(new Error('stream has no data'))
+          done()
+        })
+    })
+    it('should create writeable insert stream', function (done) {
+      db.createTable('person2', ['id', 'name', 'gender'], function () {
+        db.streamSelect('person').pipe(db.streamInsert('person2')).on('finish', function () {
+          db.select('person2', function (data) {
+            done()
+          })
+        })
       })
     })
   })
