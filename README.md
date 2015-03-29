@@ -21,6 +21,7 @@
  * [Selecting](#selecting)
  * [Aggregate functions](#aggregate-functions)
  * [SQL query](#sql-query)
+ * [Streaming](#streaming)
 
 ## Introduction
 Db3 replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used SQL patterns, rather than trying to cover the whole SQL specification. It may be useful for those who doesn't know or doesn't want to use SQL, but still interested in using mysql as backend db. Db3 is based on excellent [node-mysql](https://github.com/felixge/node-mysql) lib. For PHP alternative check out the [Medoo](http://medoo.in/) project.
@@ -222,13 +223,17 @@ db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10'
 })
 ```
 
-## Streaming data
+## Streaming
 Without callback select and insert functions return readable and writeable streams respectively. They can be used to pipe data to other streams (useful for big amounts of data).
 ```javascript
-//streaming is on when no callback specified
-//select * from `person`;
-//insert `person2` ...;
+//streaming from select to insert
 db.select('person').pipe(db.insert('person2'))
+//streaming from select to csv (using fast-csv lib)
+db.select('person').pipe(csv.format({headers: true}))
+//streaming from csv file to insert
+csv.fromPath('my.csv').pipe(db.insert('person'))
+//streaming from csv stream to insert
+csv.fromStream(readableStream).pipe(db.insert('person'))
 ```
 
 [downloads-image]: https://img.shields.io/npm/dm/db3.svg

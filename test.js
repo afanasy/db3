@@ -1,6 +1,7 @@
 var
   should = require('chai').expect(),
   _ = require('underscore'),
+  csv = require('fast-csv'),
   db3 = require('./db3.js'),
   db = db3.connect({user: 'root', database : 'test'})
 
@@ -355,6 +356,33 @@ describe('Db3', function () {
         if (!data || !data.length)
           return done(new Error('no items found'))
         done()
+      })
+    })
+  })
+  describe('#csv()', function () {
+    it('should stream select to csv', function (done) {
+      var stream = csv.format({headers: true})
+      var count = 0
+      stream.on('data', function (data) {count++})
+      stream.on('finish', function () {
+        if (!count)
+          return done(new Error('no data received'))
+        done()
+      })
+      db.select('person').pipe(stream)
+    })
+    it('should stream csv to insert', function (done) {
+      var table = 'csv' + +(new Date)
+      db.createTable(table, function () {
+        var stream = db.insert(table)
+        stream.on('finish', function () {
+          db.count(table, function (count) {
+            if (!count)
+              return done(new Error('no data received'))
+            done()
+          })
+        })
+        csv.fromString("name\ncsv1\ncsv2\n", {headers: true}).pipe(stream)
       })
     })
   })

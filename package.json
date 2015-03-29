@@ -1,6 +1,6 @@
 {
   "name": "db3",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "neat db interface for node-mysql",
   "main": "db3.js",
   "scripts": {
@@ -23,7 +23,8 @@
   },
   "devDependencies": {
     "chai": "*",
-    "mocha": "*"
+    "mocha": "*",
+    "fast-csv": "*"
   },
   "engines": {
     "node": ">= 0.6"
