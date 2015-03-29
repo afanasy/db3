@@ -222,6 +222,15 @@ db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10'
 })
 ```
 
+## Streaming data
+Without callback select and insert functions return readable and writeable streams respectively. They can be used to pipe data to other streams (useful for big amounts of data).
+```javascript
+//streaming is on when no callback specified
+//select * from `person`;
+//insert `person2` ...;
+db.select('person').pipe(db.insert('person2'))
+```
+
 [downloads-image]: https://img.shields.io/npm/dm/db3.svg
 [downloads-url]: https://npmjs.org/package/db3
 [node-version-image]: http://img.shields.io/node/v/db3.svg
