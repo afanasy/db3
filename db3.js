@@ -234,16 +234,6 @@ _.extend(Db3.prototype, {
         self.db.getConnection(function (err, connection) {
           connection.query(query).
             on('result', function (data) {
-              if (stream.transformCallback) {
-                if (stream.transformCallback.length == 2) {
-                  connection.pause()
-                  return stream.transformCallback(data, function (data) {
-                    connection.resume()
-                    stream.push(data)
-                  })
-                }
-                data = stream.transformCallback(data)
-              }
               stream.push(data)
             }).
             on('end', function () {
@@ -252,10 +242,6 @@ _.extend(Db3.prototype, {
             })
         })
       })
-      stream.transform = function (cb) {
-        stream.transformCallback = cb
-        return stream
-      }
       return stream
     }
     this.q('select', query, cb)

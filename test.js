@@ -291,40 +291,6 @@ describe('Db3', function () {
           done()
         })
     })
-    it('should create readable select stream and transform it', function (done) {
-      var count = 0
-      db.select('person').
-        transform(function (data) {
-          data.username = data.name.toLowerCase()
-          return data
-        }).
-        on('data', function (data) {
-          if (data.username)
-            count++
-        }).
-        on('end', function () {
-          if (!count)
-            return done(new Error('stream has no data'))
-          done()
-        })
-    })
-    it('should create readable select stream and transform it, calling done callback inside of transform function', function (done) {
-      var count = 0
-      db.select('person').
-        transform(function (data, done) {
-          data.username = data.name.toLowerCase()
-          done(data)
-        }).
-        on('data', function (data) {
-          if (data.username)
-            count++
-        }).
-        on('end', function () {
-          if (!count)
-            return done(new Error('stream has no data'))
-          done()
-        })
-    })
   })
   describe('#groupBy()', function () {
     var groupBy = {

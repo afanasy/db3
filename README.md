@@ -230,13 +230,6 @@ db.select('person').on('data', console.log)
 db.select('person').pipe(db.insert('person2'))
 //streaming from select to csv (using fast-csv lib)
 db.select('person').pipe(csv.format({headers: true}))
-//streaming and transforming select stream
-db.select('person').
-  transform(function (data) {
-    delete data.id
-    return data
-  }).
-  on('data', console.log)
 //streaming from csv file to insert
 csv.fromPath('my.csv').pipe(db.insert('person'))
 //streaming from csv stream to insert
