@@ -224,15 +224,19 @@ db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10'
 ## Streaming
 Without callback select and insert functions return readable and writeable streams respectively. They can be used to pipe data to other streams (useful for big amounts of data).
 ```javascript
-//streaming select
+//streaming select, outputs all rows in the table
 db.select('person').on('data', console.log)
-//streaming from select to insert
-db.select('person').pipe(db.insert('person2'))
-//streaming from select to csv (using fast-csv lib)
+//streaming from select to insert, selects all rows from one table and inserts them to the other table
+db.select('person').pipe(db.insert('nosrep'))
+//streaming from select to save, selects all rows from one table and saves them to the other table
+db.select('person').pipe(db.save('nosrep'))
+//streaming from select to delete, selects all rows from one table and deletes them from the other table
+db.select('person').pipe(db.delete('nosrep'))
+//streaming from select to csv (using fast-csv lib), selects all rows from the table and converts them to csv
 db.select('person').pipe(csv.format({headers: true}))
-//streaming from csv file to insert
+//streaming from csv file to insert, inserts csv file into the table
 csv.fromPath('my.csv').pipe(db.insert('person'))
-//streaming from csv stream to insert
+//streaming from csv stream to insert, inserts csv formatted readable stream content into the table
 csv.fromStream(readableStream).pipe(db.insert('person'))
 ```
 

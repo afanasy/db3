@@ -150,9 +150,12 @@ describe('Db3', function () {
       })
     })
     it('should create writeable insert stream', function (done) {
-      db.createTable('person2', ['id', 'name', 'gender'], function () {
-        db.select('person').pipe(db.insert('person2')).on('finish', function () {
-          db.select('person2', function (data) {
+      var table = 'person' + +(new Date)
+      db.createTable(table, ['id', 'name', 'gender'], function () {
+        db.select('person').pipe(db.insert(table)).on('finish', function () {
+          db.count(table, function (count) {
+            if (count != 6)
+              return done(new Error('insert stream failed'))
             done()
           })
         })
@@ -189,6 +192,18 @@ describe('Db3', function () {
           db.select('test', id, function (data) {
             if (data && data[0])
               return done(new Error('item was not deleted'))
+            done()
+          })
+        })
+      })
+    })
+    it('should create writeable delete stream', function (done) {
+      var table = 'person' + +(new Date)
+      db.copyTable('person', table, function () {
+        db.select(table).pipe(db.delete(table)).on('finish', function () {
+          db.count(table, function (count) {
+            if (count)
+              return done(new Error('delete stream failed'))
             done()
           })
         })
@@ -232,6 +247,18 @@ describe('Db3', function () {
           db.select('test', item.id, function (data) {
             if (!data || !data[0] || (data[0].name == item.name))
               return done(new Error('item was not updated incorrectly'))
+            done()
+          })
+        })
+      })
+    })
+    it('should create writeable save stream', function (done) {
+      var table = 'person' + +(new Date)
+      db.createTable(table, ['id', 'name', 'gender'], function () {
+        db.select('person').pipe(db.save(table)).on('finish', function () {
+          db.count(table, function (count) {
+            if (count != 6)
+              return done(new Error('insert stream failed'))
             done()
           })
         })

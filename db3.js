@@ -172,6 +172,14 @@ _.extend(Db3.prototype, {
   delete: function (table, cond, cb) {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
+    if (!cb) {
+      var self = this
+      var stream = Writable({objectMode: true})
+      stream._write = function (d, encoding, done) {
+        self.delete(table, d, function () {done()})
+      }
+      return stream
+    }
     this.q('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
   },
   save: function (table, d, field, cb) {
@@ -201,6 +209,14 @@ _.extend(Db3.prototype, {
       if (!field || _.contains(field, key))
         update.push(pair)
     })
+    if (!cb) {
+      var self = this
+      var stream = Writable({objectMode: true})
+      stream._write = function (d, encoding, done) {
+        self.save(table, d, field, function () {done()})
+      }
+      return stream
+    }
     this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), cb)
   },
   select: function (table, cond, field, cb) {
