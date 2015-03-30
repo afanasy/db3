@@ -229,6 +229,22 @@ describe('Db3', function () {
         })
       })
     })
+    it('should update an existing row using specified fields', function (done) {
+      var item = {name: 'test'}
+      db.save('test', item, function (data) {
+        if (!data.insertId)
+          return done(new Error('no insert id'))
+        item.id = data.insertId
+        item.name = 'tset'
+        db.save('test', item, 'id', function (data) {
+          db.select('test', item.id, function (data) {
+            if (!data || !data[0] || (data[0].name == item.name))
+              return done(new Error('item was not updated incorrectly'))
+            done()
+          })
+        })
+      })
+    })
   })
   describe('#select()', function () {
     it('should select an item from table', function (done) {

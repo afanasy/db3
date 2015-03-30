@@ -186,22 +186,34 @@ _.extend(Db3.prototype, {
       cond = {id: cond}
     this.q('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
   },
-  save: function (table, d, cb) {
+  save: function (table, d, field, cb) {
     if (_.isFunction(d)) {
-      cb = d
+      cb = field
+      field = d
       d = undefined
     }
-    if (!d || !_.size(d))
+    if (_.isFunction(field)) {
+      cb = field
+      field = undefined
+    }
+    if (!_.size(d))
       d = {id: null}
+    if (_.isString(field))
+      field = [field]
     var self = this
-    var values = _.map(d, function (value, key) {
+    var insert = []
+    var update = []
+    _.each(d, function (value, key) {
+      var pair
       if ((key == 'id') && (value === false))
-        return '`' + key + '` = last_insert_id(' + key + ')'
+        pair = '`' + key + '` = last_insert_id(' + key + ')'
       else
-        return self.pair(key, value, null, true, true, true)
+        pair = self.pair(key, value, null, true, true, true)
+      insert.push(pair)
+      if (!field || _.contains(field, key))
+        update.push(pair)
     })
-    values = values.join(', ')
-    this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + values + ' on duplicate key update ' + values, cb)
+    this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), cb)
   },
   select: function (table, cond, field, cb) {
     if (_.isFunction(cond)) {

@@ -156,7 +156,12 @@ SQL: insert ... on duplicate key update ...
 //db.save(table, data, callback)
 //insert `person` set `id` = 1, `name` = "Bob" on duplicate key update `id` = 1, `name` = "Bob";
 db.save('person', {id: 1, name: 'Bob'}, function (data) {
-  console.log('saved row with id ' + data.insertId + ' and name set to "Bob" into table `person`')
+  console.log('saved row with id ' + data.insertId + ' with name set to "Bob" into table `person`')
+})
+//db.save(table, data, field, callback)
+//insert `person` set `id` = 1, `name` = "Bob", gender = "male" on duplicate key update `gender` = "male";
+db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', function (data) {
+  console.log('saved row with id ' + data.insertId + ' and gender set to "male" into table `person`')
 })
 ```
 
