@@ -240,18 +240,34 @@ _.extend(Db3.prototype, {
     if (cond)
       query += ' where ' + cond
     if (!cb) {
+      var self = this
       var stream = Readable({objectMode: true})
-      stream._read = function () {}
-      this.db.getConnection(function (err, connection) {
-        connection.query(query).
-          on('result', function (data) {
-            stream.push(data)
-          }).
-          on('end', function () {
-            stream.push(null)
-            connection.release()
-          })
+      stream._read = _.once(function () {
+        self.db.getConnection(function (err, connection) {
+          connection.query(query).
+            on('result', function (data) {
+              if (stream.transformCallback) {
+                if (stream.transformCallback.length == 2) {
+                  connection.pause()
+                  return stream.transformCallback(data, function (data) {
+                    connection.resume()
+                    stream.push(data)
+                  })
+                }
+                data = stream.transformCallback(data)
+              }
+              stream.push(data)
+            }).
+            on('end', function () {
+              stream.push(null)
+              connection.release()
+            })
+        })
       })
+      stream.transform = function (cb) {
+        stream.transformCallback = cb
+        return stream
+      }
       return stream
     }
     this.q('select', query, cb)
