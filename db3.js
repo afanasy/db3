@@ -153,18 +153,6 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    if (_.isArray(d)) {
-      var self = this
-      var insertData = []
-      var insertErr = []
-      return async.eachSeries(d, function (data, done) {
-        self.insert(table, data, function (data, err) {
-          insertData.push(data)
-          insertErr.push(err)
-          done()
-        }
-      )}, function () {cb(insertData, insertErr)})
-    }
     var query = 'insert ' + mysql.escapeId(table) + ' set ' + this.cond(d, true)
     if (!cb) {
       var self = this

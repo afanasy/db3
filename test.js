@@ -1,6 +1,7 @@
 var
   should = require('chai').expect(),
   _ = require('underscore'),
+  async = require('async'),
   csv = require('fast-csv'),
   db3 = require('./db3.js'),
   db = db3.connect({user: 'root', database : 'test'})
@@ -11,14 +12,14 @@ describe('Db3', function () {
       db.createTable('test', function () {
         db.dropTable('person', function () {
           db.createTable('person', ['id', 'name', 'gender'], function () {
-            db.insert('person', [
+            async.eachSeries([
               {name: 'God', gender: 'god'},
               {name: 'Adam', gender: 'male'},
               {name: 'Eve', gender: 'female'},
               {name: 'Cain', gender: 'male'},
               {name: 'Able', gender: 'male'},
               {name: 'Seth', gender: 'male'}
-            ], function () {done()})
+            ], function (item, done) {db.insert('person', item, function () {done()})}, done)
           })
         })
       })
@@ -144,15 +145,6 @@ describe('Db3', function () {
         db.select('test', data.insertId, function (data) {
           if (!data || !data[0] || (data[0].name != 'test'))
             return done(new Error('inserted item has wrong name field'))
-          done()
-        })
-      })
-    })
-    it('should insert multiple items', function (done) {
-      db.insert('test', [{name: 'test1'}, {name: 'test2'}], function (data) {
-        db.select('test', _.pluck(data, 'insertId'), function (data) {
-          if (!data || (data.length != 2))
-            return done(new Error('inserted items not found'))
           done()
         })
       })

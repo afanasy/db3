@@ -18,12 +18,12 @@
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
     "mysql": "*",
-    "underscore": "*",
-    "async": "*"
+    "underscore": "*"
   },
   "devDependencies": {
     "chai": "*",
     "mocha": "*",
+    "async": "*",
     "fast-csv": "*"
   },
   "engines": {

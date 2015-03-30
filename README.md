@@ -121,13 +121,6 @@ SQL: insert ...
 db.insert('person', {name: 'Bob'}, function (data) {
   console.log('inserted row into table `person` with id ' + data.insertId + ' and `name` set to "Bob"')
 })
-//multiple inserts are supported, executed separately
-//insert `person` set `name` = "Bob";
-//insert `person` set `name` = "Alice";
-db.insert('person', [{name: 'Bob'}, {name: 'Alice'}], function (data) {
-  console.log('inserted 2 rows into table `person` with ids ' + _.pluck(data, insertId))
-})
-
 ```
 
 ## Updating
