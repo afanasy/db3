@@ -229,9 +229,11 @@ _.extend(Db3.prototype, {
       cb = field
       field = undefined
     }
+    var unpackRow = _.isNumber(cond) || _.isString(cond)
     if (_.isNumber(cond) || _.isString(cond) || _.isArray(cond))
       cond = {id: cond}
     cond = this.cond(cond)
+    var unpackField = _.isString(field) && (field != '*') && field
     field = field || '*'
     if (_.isString(field))
       field = [field]
@@ -243,6 +245,13 @@ _.extend(Db3.prototype, {
     var query = 'select ' + field + ' from ' + mysql.escapeId(table)
     if (cond)
       query += ' where ' + cond
+    var unpack = function (data) {
+      if (unpackField)
+        data = _.pluck(data, unpackField)
+      if (unpackRow)
+        data = data[0]
+      return data
+    }
     if (!cb) {
       var self = this
       var stream = Readable({objectMode: true})
@@ -250,7 +259,7 @@ _.extend(Db3.prototype, {
         self.db.getConnection(function (err, connection) {
           connection.query(query).
             on('result', function (data) {
-              stream.push(data)
+              stream.push(unpack(data))
             }).
             on('end', function () {
               stream.push(null)
@@ -260,7 +269,9 @@ _.extend(Db3.prototype, {
       })
       return stream
     }
-    this.q('select', query, cb)
+    this.q('select', query, function (data, err, fields) {
+      cb(unpack(data), err, fields)
+    })
   },
   groupBy: function (func, table, cond, field, cb) {
     if (_.isFunction(cond) || _.isArray(cond)) {

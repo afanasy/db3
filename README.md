@@ -167,24 +167,40 @@ db.select('person', {name: 'Bob'}, ['name', 'gender'], function (data) {
   console.log(data)
   //[{name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'female'}, ...]
 })
-//if condition is number or string or array, then its treated as condition on id field
-//select * from `person` where `id` = 1;
-db.select('person', 1, function (data) {
-  console.log('selected all fields from table `person`, where `id` = 1')
-  console.log(data)
-  //[{id: 1, name: 'Bob', gender: 'male'}]
-})
-db.select('person', [1, 2], function (data) {
-  console.log('selected all fields from table `person`, where `id` is 1 or 2')
-  console.log(data)
-  //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
-})
 //if condition value is an array, its converted to in () statement
 //select * from `person` where `name` in ('Bob', 'Alice');
 db.select('person', {name: ['Bob', 'Alice']}, function (data) {
   console.log('selected all fields table `person`, where `name` is "Bob" or "Alice"')
   console.log(data)
   //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
+})
+//if condition is number or string or array, then its treated as condition on id field
+//select * from `person` where `id` = 1;
+db.select('person', 1, function (data) {
+  console.log('selected all fields from table `person`, where `id` = 1')
+  console.log(data)
+  //{id: 1, name: 'Bob', gender: 'male'}
+  //if id is set then row object is being returned, instead of array
+})
+//select * from `person` where id in (1, 2);
+db.select('person', [1, 2], function (data) {
+  console.log('selected all fields from table `person`, where `id` is 1 or 2')
+  console.log(data)
+  //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
+})
+//select `name` from `person` where gender = "male";
+db.select('person', {gender: 'male'}, 'name', function (data) {
+  console.log('selected `name` of all male persons')
+  console.log(data)
+  //["Bob", "Bill", "Bob", ...]
+  //if field is string then returned array contains this field value instead of row object
+})
+//select `name` from `person` where id = 1;
+db.select('person', 1, 'name', function (data) {
+  console.log('selected `name` of person with `id` = 1')
+  console.log(data)
+  //"Bob"
+  //if id is set and field is string then the field value returned, instead of array
 })
 ```
 
