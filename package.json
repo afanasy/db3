@@ -1,6 +1,6 @@
 {
   "name": "db3",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "neat db interface for node-mysql",
   "main": "db3.js",
   "scripts": {

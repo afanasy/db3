@@ -23,6 +23,7 @@ var Db3 = function (d) {
 
 _.extend(Db3.prototype, {
   escape: function (value, set) {
+    var self = this
     if (_.isNaN(value) || _.isNull(value) || _.isUndefined(value))
       return 'null'
     if (_.isNumber(value))
@@ -31,7 +32,7 @@ _.extend(Db3.prototype, {
       return +value
     if (!set) {
       if (_.isArray(value))
-        return '(' + _.map(value, function (d) {return this.escape(d, set)}).join(', ') + ')'
+        return '(' + _.map(value, function (d) {return self.escape(d, set)}).join(', ') + ')'
       if (_.isObject(value)) {
         if (!_.isUndefined(value.from) && !_.isUndefined(value.to))
           return this.escape(value.from, set) + ' and ' + this.escape(value.to, set)

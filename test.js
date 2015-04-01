@@ -41,6 +41,13 @@ describe('Db3', function () {
       db.end(function () {done()})
     })
   })
+  describe('#cond()', function () {
+    it('should convert array to "in()" statement', function (done) {
+      if (db.cond({name: ['God', 'Adam']}) != "`name` in ('God', 'Adam')")
+        return done(new Error())
+      done()
+    })
+  })
   describe('#createTable()', function () {
     it('should create table', function (done) {
       var table = 'createTable' + +(new Date)
@@ -307,6 +314,13 @@ describe('Db3', function () {
     it('should select an item from table using shorthand id syntax', function (done) {
       db.select('person', 3, function (data) {
         if (!data || (data.name != 'Eve'))
+          return done(new Error('Eve not found'))
+        done()
+      })
+    })
+    it('should select an item field from table using shorthand id/name syntax', function (done) {
+      db.select('person', 3, 'name', function (data) {
+        if (data != 'Eve')
           return done(new Error('Eve not found'))
         done()
       })
