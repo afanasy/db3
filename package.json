@@ -1,6 +1,6 @@
 {
   "name": "db3",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "neat db interface for node-mysql",
   "main": "db3.js",
   "scripts": {
@@ -27,6 +27,6 @@
     "fast-csv": "*"
   },
   "engines": {
-    "node": ">= 0.6"
+    "node": ">= 0.10"
   }
 }

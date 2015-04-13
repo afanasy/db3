@@ -1,7 +1,5 @@
 var
-  Readable = require('stream').Readable,
-  Writable = require('stream').Writable,
-  util = require('util'),
+  stream = require('stream'),
   mysql = require('mysql'),
   _ = require('underscore'),
   async = require('async')
@@ -157,11 +155,9 @@ _.extend(Db3.prototype, {
     var query = 'insert ' + mysql.escapeId(table) + ' set ' + this.cond(d, true)
     if (!cb) {
       var self = this
-      var stream = Writable({objectMode: true})
-      stream._write = function (d, encoding, done) {
-        self.insert(table, d, function () {done()})
-      }
-      return stream
+      var s = new stream.Writable({objectMode: true})
+      s._write = function (d, encoding, done) {self.insert(table, d, function () {done()})}
+      return s
     }
     this.q('insert', query, cb)
   },
@@ -175,11 +171,9 @@ _.extend(Db3.prototype, {
       cond = {id: cond}
     if (!cb) {
       var self = this
-      var stream = Writable({objectMode: true})
-      stream._write = function (d, encoding, done) {
-        self.delete(table, d, function () {done()})
-      }
-      return stream
+      var s = new stream.Writable({objectMode: true})
+      s._write = function (d, encoding, done) {self.delete(table, d, function () {done()})}
+      return s
     }
     this.q('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
   },
@@ -212,11 +206,9 @@ _.extend(Db3.prototype, {
     })
     if (!cb) {
       var self = this
-      var stream = Writable({objectMode: true})
-      stream._write = function (d, encoding, done) {
-        self.save(table, d, field, function () {done()})
-      }
-      return stream
+      var s = new stream.Writable({objectMode: true})
+      s._write = function (d, encoding, done) {self.save(table, d, field, function () {done()})}
+      return s
     }
     this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), cb)
   },
@@ -253,23 +245,8 @@ _.extend(Db3.prototype, {
         data = data[0]
       return data
     }
-    if (!cb) {
-      var self = this
-      var stream = Readable({objectMode: true})
-      stream._read = _.once(function () {
-        self.db.getConnection(function (err, connection) {
-          connection.query(query).
-            on('result', function (data) {
-              stream.push(unpack(data))
-            }).
-            on('end', function () {
-              stream.push(null)
-              connection.release()
-            })
-        })
-      })
-      return stream
-    }
+    if (!cb)
+      return this.db.query(query).stream()
     this.q('select', query, function (data, err, fields) {
       cb(unpack(data), err, fields)
     })

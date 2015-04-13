@@ -14,7 +14,7 @@
  * [Copying table](#copying-table)
  * [Renaming table](#renaming-table)
  * [Checking if table exists](#checking-if-table-exists)
- * [Adding](#adding)
+ * [Inserting](#inserting)
  * [Updating](#updating)
  * [Deleting](#deleting)
  * [Saving](#saving)
@@ -97,7 +97,7 @@ SQL: rename table ...
 ```javascript
 //db.renameTable(from, to, callback)
 //rename table `person` to `nosrep`;
-db.moveTable('person', 'nosrep', function () {
+db.renameTable('person', 'nosrep', function () {
   console.log('renamed table `person` and all its data to table `nosrep`')
 })
 ```
@@ -113,7 +113,7 @@ db.tableExists('person', function (exists) {
 })
 ```
 
-## Adding
+## Inserting
 SQL: insert ...
 ```javascript
 //db.insert(table, data, callback)
