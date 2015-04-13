@@ -226,7 +226,7 @@ _.extend(Db3.prototype, {
     if (_.isNumber(cond) || _.isString(cond) || _.isArray(cond))
       cond = {id: cond}
     cond = this.cond(cond)
-    var unpackField = _.isString(field) && (field != '*') && field
+    var unpackField = (_.isNumber(field) || _.isString(field)) && (field != '*') && field
     field = field || '*'
     if (_.isString(field))
       field = [field]
@@ -300,6 +300,8 @@ _.extend(Db3.prototype, {
       cb = values
       values = undefined
     }
+    if (!cb)
+      return this.db.query(sql, values).stream()
     return this.db.query(sql, values, function (err, results, fields) {return cb(results, err, fields)})
   }
 })

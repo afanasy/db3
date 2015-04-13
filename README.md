@@ -250,6 +250,8 @@ db.select('person').pipe(db.save('nosrep'))
 db.select('person').pipe(db.delete('nosrep'))
 //streaming from select to csv (using fast-csv lib), selects all rows from the table and converts them to csv
 db.select('person').pipe(csv.format({headers: true}))
+//raw query can be streamed too
+db.query('select * from person').on('data', console.log)
 //streaming from csv file to insert, inserts csv file into the table
 csv.fromPath('my.csv').pipe(db.insert('person'))
 //streaming from csv stream to insert, inserts csv formatted readable stream content into the table

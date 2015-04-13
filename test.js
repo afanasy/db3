@@ -6,20 +6,22 @@ var
   db3 = require('./db3.js'),
   db = db3.connect({user: 'root', database : 'test'})
 
+var person = [
+  {name: 'God', gender: 'god'},
+  {name: 'Adam', gender: 'male'},
+  {name: 'Eve', gender: 'female'},
+  {name: 'Cain', gender: 'male'},
+  {name: 'Able', gender: 'male'},
+  {name: 'Seth', gender: 'male'}
+]
+
 describe('Db3', function () {
   before(function (done) {
     db.dropTable('test', function () {
       db.createTable('test', function () {
         db.dropTable('person', function () {
           db.createTable('person', ['id', 'name', 'gender'], function () {
-            async.eachSeries([
-              {name: 'God', gender: 'god'},
-              {name: 'Adam', gender: 'male'},
-              {name: 'Eve', gender: 'female'},
-              {name: 'Cain', gender: 'male'},
-              {name: 'Able', gender: 'male'},
-              {name: 'Seth', gender: 'male'}
-            ], function (item, done) {db.insert('person', item, function () {done()})}, done)
+            async.eachSeries(person, function (item, done) {db.insert('person', item, function () {done()})}, done)
           })
         })
       })
@@ -228,7 +230,7 @@ describe('Db3', function () {
       db.createTable(table, ['id', 'name', 'gender'], function () {
         db.select('person').pipe(db.save(table)).on('finish', function () {
           db.count(table, function (count) {
-            expect(count).to.equal(6)
+            expect(count).to.equal(person.length)
             done()
           })
         })
@@ -292,7 +294,7 @@ describe('Db3', function () {
     var groupBy = {
       count: {
         field: '*',
-        fullTable: 6,
+        fullTable: person.length,
         filtered: 1,
         grouped: {gender: 'female', count: 1},
         filteredAndGrouped: {gender: 'male', count: 4}
@@ -304,7 +306,7 @@ describe('Db3', function () {
         filteredAndGrouped: {gender: 'male', min: 4}
       },
       max: {
-        fullTable: 6,
+        fullTable: person.length,
         filtered: 2,
         grouped: {gender: 'female', max: 3},
         filteredGrouped: {gender: 'male', max: 4}
@@ -356,6 +358,15 @@ describe('Db3', function () {
         expect(data).to.have.length.above(0)
         done()
       })
+    })
+    it('should return readable stream if no callback provided', function (done) {
+      var count = 0
+      db.query('select * from ??', 'person').
+        on('data', function (data) {count++}).
+        on('end', function () {
+          expect(count).to.equal(person.length)
+          done()
+        })
     })
   })
   describe('#csv()', function () {
