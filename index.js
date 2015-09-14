@@ -20,6 +20,7 @@ var Db3 = function (d) {
 }
 
 _.extend(Db3.prototype, {
+  format: mysql.format,
   escape: function (value, set) {
     var self = this
     if (_.isNaN(value) || _.isNull(value) || _.isUndefined(value))
@@ -29,8 +30,11 @@ _.extend(Db3.prototype, {
     if (_.isBoolean(value))
       return +value
     if (!set) {
-      if (_.isArray(value))
+      if (_.isArray(value)) {
+        if (!value.length)
+          return '(null)'
         return '(' + _.map(value, function (d) {return self.escape(d, set)}).join(', ') + ')'
+      }
       if (_.isObject(value)) {
         if (!_.isUndefined(value.from) && !_.isUndefined(value.to))
           return this.escape(value.from, set) + ' and ' + this.escape(value.to, set)
@@ -285,6 +289,8 @@ _.extend(Db3.prototype, {
         var value = data && data[0] && _.values(data[0])[0]
         if (func == 'count')
           value = value || 0
+        if (value && !_.contains(['min', 'max'], func))
+          value = +value
         return cb(value, err, field)
       }
       cb(data, err)

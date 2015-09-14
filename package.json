@@ -2,7 +2,6 @@
   "name": "db3",
   "version": "1.0.15",
   "description": "neat db interface for node-mysql",
-  "main": "db3.js",
   "scripts": {
     "test": "./node_modules/.bin/mocha"
   },

@@ -3,7 +3,7 @@ var
   _ = require('underscore'),
   async = require('async'),
   csv = require('fast-csv'),
-  db3 = require('./db3.js'),
+  db3 = require('./'),
   db = db3.connect({user: 'root', database : 'test'})
 
 var person = [
