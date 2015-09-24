@@ -13,8 +13,8 @@ var Db3 = function (d) {
   this.db = d
   var self = this
   _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
-    self[func] = function (table, cond, field, cb) {
-      return self.groupBy(func, table, cond, field, cb)
+    self[func] = function (table, cond, field, done) {
+      return self.groupBy(func, table, cond, field, done)
     }
   })
   return this
@@ -22,16 +22,16 @@ var Db3 = function (d) {
 
 _.extend(Db3.prototype, {
   format: mysql.format,
-  end: function (cb) {
-    return this.db.end(cb)
+  end: function (done) {
+    return this.db.end(done)
   },
-  createTable: function (table, field, cb) {
+  createTable: function (table, field, done) {
     if (_.isFunction(table)) {
       field = table
       table = 'table' + +(new Date)
     }
     if (_.isFunction(field)) {
-      cb = field
+      done = field
       field = undefined
     }
     if (!_.size(field))
@@ -47,25 +47,25 @@ _.extend(Db3.prototype, {
     this.query('create table ' + mysql.escapeId(table) + ' (' + field + ')', function (data, err) {
       data = data || {}
       data.table = table
-      cb(data, err)
+      done(data, err)
     })
   },
-  dropTable: function (table, cb) {
-    this.query(mysql.format('drop table ??', table), cb)
+  dropTable: function (table, done) {
+    this.query(mysql.format('drop table ??', table), done)
   },
-  tableExists: function (table, cb) {
+  tableExists: function (table, done) {
     this.query(mysql.format('select 1 from ?? limit 1', table), function (data, err) {
       if (!err)
-        return cb(true)
-      cb(false)
+        return done(true)
+      done(false)
     })
   },
-  truncateTable: function (table, cb) {
-    this.query(mysql.format('truncate table ??', table), cb)
+  truncateTable: function (table, done) {
+    this.query(mysql.format('truncate table ??', table), done)
   },
-  copyTable: function (from, to, cb) {
+  copyTable: function (from, to, done) {
     if (_.isFunction(to)) {
-      cb = to
+      done = to
       to = undefined
     }
     if (!to)
@@ -75,13 +75,13 @@ _.extend(Db3.prototype, {
       self.query(mysql.format('insert ?? select * from ??', [to, from]), function (data, err) {
         data = data || {}
         data.table = to
-        cb(data, err)
+        done(data, err)
       })
     })
   },
-  renameTable: function (from, to, cb) {
+  renameTable: function (from, to, done) {
     if (_.isFunction(to)) {
-      cb = to
+      done = to
       to = undefined
     }
     if (!to)
@@ -89,49 +89,49 @@ _.extend(Db3.prototype, {
     this.query(mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
       data = data || {}
       data.table = to
-      cb(data, err)
+      done(data, err)
     })
   },
-  insert: function (table, d, cb) {
+  insert: function (table, d, done) {
     if (_.isFunction(d)) {
-      cb = d
+      done = d
       d = undefined
     }
     if (!d || !_.size(d))
       d = {id: null}
     var query = 'insert ' + mysql.escapeId(table) + ' set ' + where.query(d, true)
-    if (!cb) {
+    if (!done) {
       var self = this
       var s = new stream.Writable({objectMode: true})
       s._write = function (d, encoding, done) {self.insert(table, d, function () {done()})}
       return s
     }
-    this.query(query, cb)
+    this.query(query, done)
   },
-  update: function (table, cond, d, cb)  {
+  update: function (table, cond, d, done)  {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    this.query(mysql.format('update ?? set ', table) + where.query(d, true) + ' where ' + where.query(cond), cb)
+    this.query(mysql.format('update ?? set ', table) + where.query(d, true) + ' where ' + where.query(cond), done)
   },
-  delete: function (table, cond, cb) {
+  delete: function (table, cond, done) {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    if (!cb) {
+    if (!done) {
       var self = this
       var s = new stream.Writable({objectMode: true})
       s._write = function (d, encoding, done) {self.delete(table, d, function () {done()})}
       return s
     }
-    this.query('delete from ' + mysql.escapeId(table) + ' where ' + where.query(cond), cb)
+    this.query('delete from ' + mysql.escapeId(table) + ' where ' + where.query(cond), done)
   },
-  save: function (table, d, field, cb) {
+  save: function (table, d, field, done) {
     if (_.isFunction(d)) {
-      cb = field
+      done = field
       field = d
       d = undefined
     }
     if (_.isFunction(field)) {
-      cb = field
+      done = field
       field = undefined
     }
     if (!_.size(d))
@@ -151,22 +151,22 @@ _.extend(Db3.prototype, {
       if (!field || _.contains(field, key))
         update.push(pair)
     })
-    if (!cb) {
+    if (!done) {
       var self = this
       var s = new stream.Writable({objectMode: true})
       s._write = function (d, encoding, done) {self.save(table, d, field, function () {done()})}
       return s
     }
-    this.query('insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), cb)
+    this.query('insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), done)
   },
-  select: function (table, cond, field, cb) {
+  select: function (table, cond, field, done) {
     if (_.isFunction(cond)) {
-      cb = field
+      done = field
       field = cond
       cond = undefined
     }
     if (_.isFunction(field)) {
-      cb = field
+      done = field
       field = undefined
     }
     var unpackRow = _.isNumber(cond) || _.isString(cond)
@@ -192,20 +192,20 @@ _.extend(Db3.prototype, {
         data = data[0]
       return data
     }
-    if (!cb)
+    if (!done)
       return this.db.query(query).stream()
     this.query(query, function (data, err, fields) {
-      cb(unpack(data), err, fields)
+      done(unpack(data), err, fields)
     })
   },
-  groupBy: function (func, table, cond, field, cb) {
+  groupBy: function (func, table, cond, field, done) {
     if (_.isFunction(cond) || _.isArray(cond)) {
-      cb = field
+      done = field
       field = cond
       cond = undefined
     }
     if (_.isFunction(field)) {
-      cb = field
+      done = field
       field = undefined
     }
     cond = where.query(cond)
@@ -229,18 +229,18 @@ _.extend(Db3.prototype, {
           value = value || 0
         if (value && !_.contains(['min', 'max'], func))
           value = +value
-        return cb(value, err, field)
+        return done(value, err, field)
       }
-      cb(data, err)
+      done(data, err)
     })
   },
-  query: function (sql, values, cb) {
+  query: function (sql, values, done) {
     if (_.isFunction(values)) {
-      cb = values
+      done = values
       values = undefined
     }
-    if (!cb)
+    if (!done)
       return this.db.query(sql, values).stream()
-    return this.db.query(sql, values, function (err, results, fields) {return cb(results, err, fields)})
+    return this.db.query(sql, values, function (err, results, fields) {return done(results, err, fields)})
   }
 })
