@@ -2,6 +2,7 @@ var
   _ = require('underscore'),
   stream = require('stream'),
   mysql = require('mysql'),
+  shortid = require('shortid'),
   where = require('js-where'),
   orderBy = require('js-order-by')
 
@@ -28,7 +29,7 @@ _.extend(Db3.prototype, {
   createTable: function (table, field, done) {
     if (_.isFunction(table)) {
       field = table
-      table = 'table' + +(new Date)
+      table = 'table' + shortid.generate()
     }
     if (_.isFunction(field)) {
       done = field
@@ -69,7 +70,7 @@ _.extend(Db3.prototype, {
       to = undefined
     }
     if (!to)
-      to = from + +(new Date)
+      to = from + shortid.generate()
     var self = this
     self.query(mysql.format('create table ?? like ??', [to, from]), function (err, data) {
       if (err)
@@ -89,7 +90,7 @@ _.extend(Db3.prototype, {
       to = undefined
     }
     if (!to)
-      to = from + +(new Date)
+      to = from + shortid.generate()
     this.query(mysql.format('rename table ?? to ??', [from, to]), function (err, data) {
       if (err)
         return done(err, null)
@@ -164,6 +165,25 @@ _.extend(Db3.prototype, {
       return s
     }
     this.query('insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), done)
+  },
+  duplicate: function (table, id, d, done) {
+    if (_.isFunction(d)) {
+      done = d
+      d = undefined
+    }
+    var self = this
+    var temporaryTable = 'duplicate' + shortid.generate()
+    self.query('create table ?? like ??', [temporaryTable, table], function () {
+      self.query('insert ?? select * from ?? where ?', [temporaryTable, table, {id: id}], function () {
+        self.update(temporaryTable, id, d, function () {
+          self.query('alter table ?? drop id', [temporaryTable], function () {
+            self.query('insert ?? select null, ??.* from ??', [table, temporaryTable, temporaryTable], function (err, data) {
+              self.dropTable(temporaryTable, function () {done(err, data)})
+            })
+          })
+        })
+      })
+    })
   },
   select: function (d, cond, field, done) {
     if (_.isFunction(cond)) {

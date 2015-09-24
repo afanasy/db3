@@ -18,6 +18,7 @@
   "dependencies": {
     "mysql": "*",
     "underscore": "*",
+    "shortid": "*",
     "js-where": "*",
     "js-order-by": "*"
   },

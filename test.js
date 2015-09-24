@@ -247,6 +247,20 @@ describe('Db3', function () {
       })
     })
   })
+  describe('#duplicate()', function () {
+    it('duplicates row', function (done) {
+      db.insert('test', function (err, data) {
+        var id = data.insertId
+        db.duplicate('test', id, function (err, data) {
+          expect(data.insertId).to.not.equal(id)
+          db.count('test', data.insertId, function (err, data) {
+            expect(data).to.equal(1)
+            done()
+          })
+        })
+      })
+    })
+  })
   describe('#select()', function () {
     it('should select an item from table', function (done) {
       db.select('person', {name: 'God'}, function (err, data) {
@@ -307,6 +321,12 @@ describe('Db3', function () {
     })
     it('selects from object with limit', function (done) {
       db.select({table: 'person', limit: 10}, function (err, data) {
+        expect(data.length).to.equal(person.length)
+        done()
+      })
+    })
+    it('selects with empty condition', function (done) {
+      db.select('person', {}, function (err, data) {
         expect(data.length).to.equal(person.length)
         done()
       })
