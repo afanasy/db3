@@ -17,13 +17,15 @@ var person = [
 
 describe('Db3', function () {
   before(function (done) {
-    async.series([
-      db.dropTable.bind(db, 'test'),
-      db.createTable.bind(db, 'test'),
-      db.dropTable.bind(db, 'person'),
-      db.createTable.bind(db, 'person', ['id', 'name', 'gender']),
-      async.eachSeries.bind(async, person, db.insert.bind(db, 'person'))
-    ], done)
+    db.dropTable('test', function () {
+      db.dropTable('person', function () {
+        async.series([
+          db.createTable.bind(db, 'test'),
+          db.createTable.bind(db, 'person', ['id', 'name', 'gender']),
+          async.eachSeries.bind(async, person, db.insert.bind(db, 'person'))
+        ], done)
+      })
+    })
   })
   describe('#connect()', function () {
     it('should connect to the db', function (done) {
