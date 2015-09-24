@@ -1,6 +1,6 @@
 {
   "name": "db3",
-  "version": "1.0.15",
+  "version": "2.0.0",
   "description": "neat db interface for node-mysql",
   "scripts": {
     "test": "./node_modules/.bin/mocha"
@@ -9,7 +9,7 @@
     "type": "git",
     "url": "https://github.com/afanasy/db3.git"
   },
-  "author": "Afanasy Kurakin <afanasy@gmail.com>",
+  "author": "Afanasii Kurakin <afanasy@gmail.com>",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/afanasy/db3/issues"
