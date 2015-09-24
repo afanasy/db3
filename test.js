@@ -160,6 +160,22 @@ describe('Db3', function () {
         })
       })
     })
+    it('updates rows with array condition', function (done) {
+      db.insert('test', function (err, data) {
+        var id = [data.insertId]
+        db.insert('test', function (err, data) {
+          id.push(data.insertId)
+          db.update('test', id, {name: 'test'}, function (err, data) {
+            db.select('test', id, function (err, data) {
+              expect(data.length).to.equal(id.length)
+              expect(data[0].name).to.equal('test')
+              expect(data[1].name).to.equal('test')
+              done()
+            })
+          })
+        })
+      })
+    })
   })
   describe('#delete()', function () {
     it('should delete row', function (done) {

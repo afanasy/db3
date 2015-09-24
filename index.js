@@ -115,7 +115,7 @@ _.extend(Db3.prototype, {
     this.query(query, done)
   },
   update: function (table, cond, d, done)  {
-    if (_.isString(cond) || _.isNumber(cond))
+    if (_.isString(cond) || _.isNumber(cond) || _.isArray(cond))
       cond = {id: cond}
     this.query(mysql.format('update ?? set ', table) + where.query(d, true) + ' where ' + where.query(cond), done)
   },
