@@ -283,6 +283,18 @@ describe('Db3', function () {
           done()
         })
     })
+    it('selects from object with orderBy', function (done) {
+      db.select({table: 'person', field: 'name', orderBy: {name: 'desc'}}, function (err, data) {
+        expect(data[0]).to.equal('Seth')
+        done()
+      })
+    })
+    it('selects from object with limit', function (done) {
+      db.select({table: 'person', limit: 10}, function (err, data) {
+        expect(data.length).to.equal(person.length)
+        done()
+      })
+    })
   })
   describe('#groupBy()', function () {
     var groupBy = {

@@ -1,9 +1,9 @@
 var
   _ = require('underscore'),
-  async = require('async'),
   stream = require('stream'),
   mysql = require('mysql'),
-  where = require('js-where')
+  where = require('js-where'),
+  orderBy = require('js-order-by')
 
 exports.connect = function (d) {
   return new Db3(mysql.createPool(d))
@@ -165,32 +165,44 @@ _.extend(Db3.prototype, {
     }
     this.query('insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), done)
   },
-  select: function (table, cond, field, done) {
+  select: function (d, cond, field, done) {
     if (_.isFunction(cond)) {
-      done = field
-      field = cond
+      done = cond
+      field = undefined
       cond = undefined
     }
     if (_.isFunction(field)) {
       done = field
       field = undefined
     }
-    var unpackRow = _.isNumber(cond) || _.isString(cond)
-    if (_.isNumber(cond) || _.isString(cond) || _.isArray(cond))
-      cond = {id: cond}
-    cond = where.query(cond)
-    var unpackField = (_.isNumber(field) || _.isString(field)) && (field != '*') && field
-    field = field || '*'
-    if (_.isString(field))
-      field = [field]
-    field = _.map(field, function (d) {
+    if (_.isString(d)) {
+      d = {
+        table: d,
+        where: cond,
+        field: field
+      }
+    }
+    var unpackRow = _.isNumber(d.where) || _.isString(d.where)
+    if (_.isNumber(d.where) || _.isString(d.where) || _.isArray(d.where))
+      d.where = {id: d.where}
+    d.field = d.field || '*'
+    var unpackField = (_.isNumber(d.field) || _.isString(d.field)) && (d.field != '*') && d.field
+    if (_.isString(d.field))
+      d.field = [d.field]
+    d.field = _.map(d.field, function (d) {
       if (d != '*')
-        return mysql.escapeId(field)
+        return mysql.escapeId(d)
       return d
     }).join(', ')
-    var query = 'select ' + field + ' from ' + mysql.escapeId(table)
-    if (cond)
-      query += ' where ' + cond
+    var query = 'select ' + d.field + ' from ' + mysql.escapeId(d.table)
+    d.where = where.query(d.where)
+    if (d.where)
+      query += ' where ' + d.where
+    d.orderBy = orderBy.query(d.orderBy)
+    if (d.orderBy)
+      query += ' order by ' + d.orderBy
+    if (d.limit)
+      query += ' limit ' + +d.limit
     var unpack = function (data) {
       if (unpackField)
         data = _.pluck(data, unpackField)
