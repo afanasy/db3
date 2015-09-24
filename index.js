@@ -44,20 +44,20 @@ _.extend(Db3.prototype, {
         type = 'bigint'
       return mysql.escapeId(field) + ' ' + type
     }).join(', ')
-    this.query('create table ' + mysql.escapeId(table) + ' (' + field + ')', function (data, err) {
+    this.query('create table ' + mysql.escapeId(table) + ' (' + field + ')', function (err, data) {
       data = data || {}
       data.table = table
-      done(data, err)
+      done(err, data)
     })
   },
   dropTable: function (table, done) {
     this.query(mysql.format('drop table ??', table), done)
   },
   tableExists: function (table, done) {
-    this.query(mysql.format('select 1 from ?? limit 1', table), function (data, err) {
+    this.query(mysql.format('select 1 from ?? limit 1', table), function (err, data) {
       if (!err)
-        return done(true)
-      done(false)
+        return done(null, true)
+      done(null, false)
     })
   },
   truncateTable: function (table, done) {
@@ -71,11 +71,15 @@ _.extend(Db3.prototype, {
     if (!to)
       to = from + +(new Date)
     var self = this
-    self.query(mysql.format('create table ?? like ??', [to, from]), function () {
-      self.query(mysql.format('insert ?? select * from ??', [to, from]), function (data, err) {
+    self.query(mysql.format('create table ?? like ??', [to, from]), function (err, data) {
+      if (err)
+        return done(err, null)
+      self.query(mysql.format('insert ?? select * from ??', [to, from]), function (err, data) {
+        if (err)
+          return done(err, null)
         data = data || {}
         data.table = to
-        done(data, err)
+        done(err, data)
       })
     })
   },
@@ -86,10 +90,12 @@ _.extend(Db3.prototype, {
     }
     if (!to)
       to = from + +(new Date)
-    this.query(mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
+    this.query(mysql.format('rename table ?? to ??', [from, to]), function (err, data) {
+      if (err)
+        return done(err, null)
       data = data || {}
       data.table = to
-      done(data, err)
+      done(err, data)
     })
   },
   insert: function (table, d, done) {
@@ -194,8 +200,8 @@ _.extend(Db3.prototype, {
     }
     if (!done)
       return this.db.query(query).stream()
-    this.query(query, function (data, err, fields) {
-      done(unpack(data), err, fields)
+    this.query(query, function (err, data, fields) {
+      done(err, unpack(data), fields)
     })
   },
   groupBy: function (func, table, cond, field, done) {
@@ -222,16 +228,14 @@ _.extend(Db3.prototype, {
       query += ' where ' + cond
     if (field.length)
       query += ' group by ' + field
-    this.query(query, function (data, err) {
+    this.query(query, function (err, data) {
       if (!field.length) {
         var value = data && data[0] && _.values(data[0])[0]
-        if (func == 'count')
-          value = value || 0
         if (value && !_.contains(['min', 'max'], func))
           value = +value
-        return done(value, err, field)
+        return done(err, value, field)
       }
-      done(data, err)
+      done(err, data)
     })
   },
   query: function (sql, values, done) {
@@ -241,6 +245,6 @@ _.extend(Db3.prototype, {
     }
     if (!done)
       return this.db.query(sql, values).stream()
-    return this.db.query(sql, values, function (err, results, fields) {return done(results, err, fields)})
+    return this.db.query(sql, values, done)
   }
 })
