@@ -1,8 +1,9 @@
 var
+  _ = require('underscore'),
+  async = require('async'),
   stream = require('stream'),
   mysql = require('mysql'),
-  _ = require('underscore'),
-  async = require('async')
+  where = require('js-where')
 
 exports.connect = function (d) {
   return new Db3(mysql.createPool(d))
@@ -21,64 +22,6 @@ var Db3 = function (d) {
 
 _.extend(Db3.prototype, {
   format: mysql.format,
-  escape: function (value, set) {
-    var self = this
-    if (_.isNaN(value) || _.isNull(value) || _.isUndefined(value))
-      return 'null'
-    if (_.isNumber(value))
-      return value
-    if (_.isBoolean(value))
-      return +value
-    if (!set) {
-      if (_.isArray(value)) {
-        if (!value.length)
-          return '(null)'
-        return '(' + _.map(value, function (d) {return self.escape(d, set)}).join(', ') + ')'
-      }
-      if (_.isObject(value)) {
-        if (!_.isUndefined(value.from) && !_.isUndefined(value.to))
-          return this.escape(value.from, set) + ' and ' + this.escape(value.to, set)
-        if (!_.isUndefined(value.from))
-          return this.escape(value.from, set)
-        if (!_.isUndefined(value.to))
-          return this.escape(value.to, set)
-      }
-    }
-    return mysql.escape(String(value))
-  },
-  cond: function (d, set) {
-    var delimiter = ' and '
-    if (set)
-      delimiter = ', '
-    if (_.isNumber(d) || _.isString(d))
-      d = {id: +d}
-    var self = this
-    return _.map(d, function (value, key) {return self.pair(key, value, null, true, true, set)}).join(delimiter)
-  },
-  pair: function (key, value, operator, escapeKey, escapeValue, set) {
-    operator = operator || '='
-    if (!set) {
-      if ((_.isNaN(value) || _.isNull(value) || _.isUndefined(value)) && (operator == '='))
-        operator = 'is'
-      if (_.isArray(value))
-        operator = 'in'
-      if (_.isObject(value)) {
-        if (!_.isUndefined(value.from) && !_.isUndefined(value.to))
-          operator = 'between'
-        else {
-          if (!_.isUndefined(value.from))
-            operator = '>='
-          if (!_.isUndefined(value.to))
-            operator = '<='
-        }
-      }
-    }
-    if (escapeKey !== false)
-      key = mysql.escapeId(String(key))
-    if (escapeValue !== false)
-      value = this.escape(value, set)
-    return key + ' ' + operator + ' ' + value
-  },
   end: function (cb) {
     return this.db.end(cb)
   },
@@ -101,24 +44,24 @@ _.extend(Db3.prototype, {
         type = 'bigint'
       return mysql.escapeId(field) + ' ' + type
     }).join(', ')
-    this.q('createTable', 'create table ' + mysql.escapeId(table) + ' (' + field + ')', function (data, err) {
+    this.query('create table ' + mysql.escapeId(table) + ' (' + field + ')', function (data, err) {
       data = data || {}
       data.table = table
       cb(data, err)
     })
   },
   dropTable: function (table, cb) {
-    this.q('dropTable', mysql.format('drop table ??', table), cb)
+    this.query(mysql.format('drop table ??', table), cb)
   },
   tableExists: function (table, cb) {
-    this.q('tableExists', mysql.format('select 1 from ?? limit 1', table), function (data, err) {
+    this.query(mysql.format('select 1 from ?? limit 1', table), function (data, err) {
       if (!err)
         return cb(true)
       cb(false)
     })
   },
   truncateTable: function (table, cb) {
-    this.q('truncateTable', mysql.format('truncate table ??', table), cb)
+    this.query(mysql.format('truncate table ??', table), cb)
   },
   copyTable: function (from, to, cb) {
     if (_.isFunction(to)) {
@@ -128,8 +71,8 @@ _.extend(Db3.prototype, {
     if (!to)
       to = from + +(new Date)
     var self = this
-    self.q('copyTable', mysql.format('create table ?? like ??', [to, from]), function () {
-      self.q('copyTable', mysql.format('insert ?? select * from ??', [to, from]), function (data, err) {
+    self.query(mysql.format('create table ?? like ??', [to, from]), function () {
+      self.query(mysql.format('insert ?? select * from ??', [to, from]), function (data, err) {
         data = data || {}
         data.table = to
         cb(data, err)
@@ -143,7 +86,7 @@ _.extend(Db3.prototype, {
     }
     if (!to)
       to = from + +(new Date)
-    this.q('renameTable', mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
+    this.query(mysql.format('rename table ?? to ??', [from, to]), function (data, err) {
       data = data || {}
       data.table = to
       cb(data, err)
@@ -156,19 +99,19 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    var query = 'insert ' + mysql.escapeId(table) + ' set ' + this.cond(d, true)
+    var query = 'insert ' + mysql.escapeId(table) + ' set ' + where.query(d, true)
     if (!cb) {
       var self = this
       var s = new stream.Writable({objectMode: true})
       s._write = function (d, encoding, done) {self.insert(table, d, function () {done()})}
       return s
     }
-    this.q('insert', query, cb)
+    this.query(query, cb)
   },
   update: function (table, cond, d, cb)  {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    this.q('update', mysql.format('update ?? set ', table) + this.cond(d, true) + ' where ' + this.cond(cond), cb)
+    this.query(mysql.format('update ?? set ', table) + where.query(d, true) + ' where ' + where.query(cond), cb)
   },
   delete: function (table, cond, cb) {
     if (_.isString(cond) || _.isNumber(cond))
@@ -179,7 +122,7 @@ _.extend(Db3.prototype, {
       s._write = function (d, encoding, done) {self.delete(table, d, function () {done()})}
       return s
     }
-    this.q('delete', 'delete from ' + mysql.escapeId(table) + ' where ' + this.cond(cond), cb)
+    this.query('delete from ' + mysql.escapeId(table) + ' where ' + where.query(cond), cb)
   },
   save: function (table, d, field, cb) {
     if (_.isFunction(d)) {
@@ -203,7 +146,7 @@ _.extend(Db3.prototype, {
       if ((key == 'id') && (value === false))
         pair = '`' + key + '` = last_insert_id(' + key + ')'
       else
-        pair = self.pair(key, value, null, true, true, true)
+        pair = where.pair(key, value, null, true, true, true)
       insert.push(pair)
       if (!field || _.contains(field, key))
         update.push(pair)
@@ -214,7 +157,7 @@ _.extend(Db3.prototype, {
       s._write = function (d, encoding, done) {self.save(table, d, field, function () {done()})}
       return s
     }
-    this.q('save', 'insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), cb)
+    this.query('insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), cb)
   },
   select: function (table, cond, field, cb) {
     if (_.isFunction(cond)) {
@@ -229,7 +172,7 @@ _.extend(Db3.prototype, {
     var unpackRow = _.isNumber(cond) || _.isString(cond)
     if (_.isNumber(cond) || _.isString(cond) || _.isArray(cond))
       cond = {id: cond}
-    cond = this.cond(cond)
+    cond = where.query(cond)
     var unpackField = (_.isNumber(field) || _.isString(field)) && (field != '*') && field
     field = field || '*'
     if (_.isString(field))
@@ -251,7 +194,7 @@ _.extend(Db3.prototype, {
     }
     if (!cb)
       return this.db.query(query).stream()
-    this.q('select', query, function (data, err, fields) {
+    this.query(query, function (data, err, fields) {
       cb(unpack(data), err, fields)
     })
   },
@@ -265,7 +208,7 @@ _.extend(Db3.prototype, {
       cb = field
       field = undefined
     }
-    cond = this.cond(cond)
+    cond = where.query(cond)
     var defaultField = 'id'
     if (func == 'count')
       defaultField = '*'
@@ -284,7 +227,7 @@ _.extend(Db3.prototype, {
       query += ' where ' + cond
     if (field.length)
       query += ' group by ' + field
-    this.q(func, query, function (data, err) {
+    this.query(query, function (data, err) {
       if (!field.length) {
         var value = data && data[0] && _.values(data[0])[0]
         if (func == 'count')
@@ -295,11 +238,6 @@ _.extend(Db3.prototype, {
       }
       cb(data, err)
     })
-  },
-  q: function (name, query, cb) {
-    if ((this.logQuery === true) || (this.logQuery === name) || _.contains(this.logQuery, name))
-      console.log(query)
-    this.query(query, cb)
   },
   query: function (sql, values, cb) {
     if (_.isFunction(values)) {

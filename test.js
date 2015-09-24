@@ -41,11 +41,6 @@ describe('Db3', function () {
       db3.connect({user: 'root', database : 'test'}).end(function () {done()})
     })
   })
-  describe('#cond()', function () {
-    it('should convert array to "in()" statement', function () {
-      expect(db.cond({name: ['God', 'Adam']})).to.be.equal("`name` in ('God', 'Adam')")
-    })
-  })
   describe('#createTable()', function () {
     it('should create table', function (done) {
       var table = 'createTable' + +(new Date)
