@@ -209,15 +209,10 @@ _.extend(Db3.prototype, {
       field = undefined
     }
     cond = where.query(cond)
-    var defaultField = 'id'
-    if (func == 'count')
-      defaultField = '*'
-    field = field || defaultField
+    field = field || 'id'
     if (_.isString(field))
       field = [field]
-    var lastField = field.pop()
-    if (func != 'count')
-      lastField = mysql.escapeId(lastField)
+    var lastField = mysql.escapeId(field.pop())
     field = _.map(field, function (d, i) {return mysql.escapeId(field)}).join(', ')
     var query = 'select ' + field
     if (field.length)
