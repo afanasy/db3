@@ -56,7 +56,7 @@ create table `person` (
   gender text
 );
 */
-db.createTable('person', ['id', 'name', 'gender'], function (data) {
+db.createTable('person', ['id', 'name', 'gender'], function (err, data) {
   console.log('created table `person` with field `id`, `name`, `gender`')
 })
 ```
@@ -105,7 +105,7 @@ db.renameTable('person', 'nosrep', function () {
 ## Checking if table exists
 ```javascript
 //db.tableExists(table, callback)
-db.tableExists('person', function (exists) {
+db.tableExists('person', function (err, exists) {
   if (exists)
     console.log('table `person` exists')
   else
@@ -118,7 +118,7 @@ SQL: insert ...
 ```javascript
 //db.insert(table, data, callback)
 //insert `person` set `name` = "Bob";
-db.insert('person', {name: 'Bob'}, function (data) {
+db.insert('person', {name: 'Bob'}, function (err, data) {
   console.log('inserted row into table `person` with id ' + data.insertId + ' and `name` set to "Bob"')
 })
 ```
@@ -128,7 +128,7 @@ SQL: update ...
 ```javascript
 //db.update(table, condition, data, callback)
 //update `person` set `name` = "Bob" where `name` = "Alice";
-db.update('person', {name: 'Bob'}, {name: 'Alice'}, function (data) {
+db.update('person', {name: 'Bob'}, {name: 'Alice'}, function (err, data) {
   console.log('updated table `person`: ' + data.changedRows + ' rows named "Bob" changed name to "Alice"')
 })
 ```
@@ -138,7 +138,7 @@ SQL: delete from ...
 ```javascript
 //db.delete(table, condition, callback)
 //delete from `person` where `name` = "Alice";
-db.delete('person', {name: 'Alice'}, function (data) {
+db.delete('person', {name: 'Alice'}, function (err, data) {
   console.log('deleted ' + data.affectedRows + ' rows named "Alice" from table `person`')
 })
 ```
@@ -148,12 +148,12 @@ SQL: insert ... on duplicate key update ...
 ```javascript
 //db.save(table, data, callback)
 //insert `person` set `id` = 1, `name` = "Bob" on duplicate key update `id` = 1, `name` = "Bob";
-db.save('person', {id: 1, name: 'Bob'}, function (data) {
+db.save('person', {id: 1, name: 'Bob'}, function (err, data) {
   console.log('saved row with id ' + data.insertId + ' with name set to "Bob" into table `person`')
 })
 //db.save(table, data, field, callback)
 //insert `person` set `id` = 1, `name` = "Bob", gender = "male" on duplicate key update `gender` = "male";
-db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', function (data) {
+db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', function (err, data) {
   console.log('saved row with id ' + data.insertId + ' and gender set to "male" into table `person`')
 })
 ```
@@ -162,41 +162,41 @@ db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', function (data
 ```javascript
 //db.select(table, condition, field, callback)
 //select `name`, `gender` from `person` where `name` = "Bob";
-db.select('person', {name: 'Bob'}, ['name', 'gender'], function (data) {
+db.select('person', {name: 'Bob'}, ['name', 'gender'], function (err, data) {
   console.log('selected name, gender fields from table `person`, where `name` = "Bob"')
   console.log(data)
   //[{name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'female'}, ...]
 })
 //if condition value is an array, its converted to in () statement
 //select * from `person` where `name` in ('Bob', 'Alice');
-db.select('person', {name: ['Bob', 'Alice']}, function (data) {
+db.select('person', {name: ['Bob', 'Alice']}, function (err, data) {
   console.log('selected all fields table `person`, where `name` is "Bob" or "Alice"')
   console.log(data)
   //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
 })
 //if condition is number or string or array, then its treated as condition on id field
 //select * from `person` where `id` = 1;
-db.select('person', 1, function (data) {
+db.select('person', 1, function (err, data) {
   console.log('selected all fields from table `person`, where `id` = 1')
   console.log(data)
   //{id: 1, name: 'Bob', gender: 'male'}
   //if id is set then row object is being returned, instead of array
 })
 //select * from `person` where id in (1, 2);
-db.select('person', [1, 2], function (data) {
+db.select('person', [1, 2], function (err, data) {
   console.log('selected all fields from table `person`, where `id` is 1 or 2')
   console.log(data)
   //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
 })
 //select `name` from `person` where gender = "male";
-db.select('person', {gender: 'male'}, 'name', function (data) {
+db.select('person', {gender: 'male'}, 'name', function (err, data) {
   console.log('selected `name` of all male persons')
   console.log(data)
   //["Bob", "Bill", "Bob", ...]
   //if field is string then returned array contains this field value instead of row object
 })
 //select `name` from `person` where id = 1;
-db.select('person', 1, 'name', function (data) {
+db.select('person', 1, 'name', function (err, data) {
   console.log('selected `name` of person with `id` = 1')
   console.log(data)
   //"Bob"
@@ -209,19 +209,19 @@ Supported functions: count, min, max, avg, sum
 ```javascript
 //db[functionName](table, condition, field, callback)
 //select count(*) from `person` where `name` = "Bob";
-db.count('person', {name: 'Bob'}, function (count) {
+db.count('person', {name: 'Bob'}, function (err, count) {
   console.log('there are ' + count + ' persons named "Bob"')  
 })
 //select min(id) from `person` where `name` = "Bob";
-db.min('person', {name: 'Bob'}, function (min) {
+db.min('person', {name: 'Bob'}, function (err, min) {
   console.log('first "Bob" has id ' + min)  
 })
 //select name, avg(age) from `person` where `name` = "Bob";
-db.min('person', {name: 'Bob'}, ['age'], function (avg) {
+db.avg('person', {name: 'Bob'}, ['age'], function (err, avg) {
   console.log('Bob average age is ' + avg)  
 })
 //select name, sum(income) from `person` where `city` = "Hong Kong" group by name;
-db.min('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function (data) {
+db.sum('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function (err, data) {
   console.log('total income of HK citizens by name for 2015')  
   console.log(data)
   //[{name: 'Yun', sum: someNumber}, {name: 'Tony', sum: someNumber}, {name: 'Donnie', sum: someNumber}, ...]
@@ -231,7 +231,7 @@ db.min('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function
 ## SQL query
 Proxied to the underlying node-mysql lib, but with swapped 'err' and 'data' arguments (more info [here](https://github.com/felixge/node-mysql#performing-queries))
 ```javascript
-db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10', ['gender', 'person', 'gender'], function (data) {
+db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10', ['gender', 'person', 'gender'], function (err, data) {
   console.log(data)
   //[{gender: 'male', count: someNumber}, {gender: 'female', count: someNumber}, ...]
 })
