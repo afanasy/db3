@@ -19,8 +19,8 @@
     "mysql": "*",
     "underscore": "*",
     "shortid": "*",
-    "js-where": "*",
-    "js-order-by": "*"
+    "db3-where": "*",
+    "db3-order-by": "*"
   },
   "devDependencies": {
     "chai": "*",

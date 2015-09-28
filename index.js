@@ -3,8 +3,8 @@ var
   stream = require('stream'),
   mysql = require('mysql'),
   shortid = require('shortid'),
-  where = require('js-where'),
-  orderBy = require('js-order-by')
+  where = require('db3-where'),
+  orderBy = require('db3-order-by')
 
 exports.connect = function (d) {
   return new Db3(mysql.createPool(d))
@@ -23,6 +23,8 @@ var Db3 = function (d) {
 
 _.extend(Db3.prototype, {
   format: mysql.format,
+  where: where,
+  orderBy: orderBy,
   end: function (done) {
     return this.db.end(done)
   },
