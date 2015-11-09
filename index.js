@@ -3,6 +3,7 @@ var
   stream = require('stream'),
   mysql = require('mysql'),
   shortid = require('shortid'),
+  set = require('db3-set'),
   where = require('db3-where'),
   orderBy = require('db3-order-by')
 
@@ -108,7 +109,7 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    var query = 'insert ' + mysql.escapeId(table) + ' set ' + where.query(d, true)
+    var query = 'insert ' + mysql.escapeId(table) + ' set ' + set.query(d)
     if (!done) {
       var self = this
       var s = new stream.Writable({objectMode: true})
@@ -120,7 +121,7 @@ _.extend(Db3.prototype, {
   update: function (table, cond, d, done)  {
     if (_.isString(cond) || _.isNumber(cond) || _.isArray(cond))
       cond = {id: cond}
-    this.query(mysql.format('update ?? set ', table) + where.query(d, true) + ' where ' + where.query(cond), done)
+    this.query(mysql.format('update ?? set ', table) + set.query(d) + ' where ' + where.query(cond), done)
   },
   delete: function (table, cond, done) {
     if (_.isString(cond) || _.isNumber(cond))
@@ -147,26 +148,13 @@ _.extend(Db3.prototype, {
       d = {id: null}
     if (_.isString(field))
       field = [field]
-    var self = this
-    var insert = []
-    var update = []
-    _.each(d, function (value, key) {
-      var pair
-      if ((key == 'id') && (value === false))
-        pair = '`' + key + '` = last_insert_id(' + key + ')'
-      else
-        pair = where.pair(key, value, null, true, true, true)
-      insert.push(pair)
-      if (!field || _.contains(field, key))
-        update.push(pair)
-    })
     if (!done) {
       var self = this
       var s = new stream.Writable({objectMode: true})
       s._write = function (d, encoding, done) {self.save(table, d, field, function () {done()})}
       return s
     }
-    this.query('insert ' + mysql.escapeId(table) + ' set ' + insert.join(', ') + ' on duplicate key update ' + update.join(', '), done)
+    this.query('insert ' + mysql.escapeId(table) + ' set ' + set.query(d) + ' on duplicate key update ' + set.query((field && _.pick(d, field)) || d), done)
   },
   duplicate: function (table, id, d, done) {
     if (_.isFunction(d)) {
