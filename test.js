@@ -28,7 +28,7 @@ describe('Db3', function () {
     })
   })
   describe('#connect()', function () {
-    it('should connect to the db', function (done) {
+    it('connects to the db', function (done) {
       var db = db3.connect({user: 'root', database : 'test'})
       db.query('select 1', function (err, data) {
         expect(data).to.have.length(1)
@@ -37,12 +37,12 @@ describe('Db3', function () {
     })
   })
   describe('#end()', function () {
-    it('should disconnect from db', function (done) {
+    it('disconnects from db', function (done) {
       db3.connect({user: 'root', database : 'test'}).end(done)
     })
   })
   describe('#createTable()', function () {
-    it('should create table', function (done) {
+    it('creates table', function (done) {
       var table = 'createTable' + +(new Date)
       db.createTable(table, function () {
         db.tableExists(table, function (err, exists) {
@@ -53,7 +53,7 @@ describe('Db3', function () {
     })
   })
   describe('#dropTable()', function () {
-    it('should drop table', function (done) {
+    it('drops table', function (done) {
       var table = 'dropTable' + +(new Date)
       db.createTable(table, function () {
         db.dropTable(table, function () {
@@ -66,7 +66,7 @@ describe('Db3', function () {
     })
   })
   describe('#tableExists()', function () {
-    it('should check if table exists', function (done) {
+    it('checks if table exists', function (done) {
       db.tableExists('tableExists' + +(new Date), function (err, exists) {
         expect(exists).not.to.be.true
         done()
@@ -75,7 +75,7 @@ describe('Db3', function () {
   })
 
   describe('#truncateTable()', function () {
-    it('should truncate table', function (done) {
+    it('truncates table', function (done) {
       var table = 'truncateTable' + +(new Date)
       db.createTable(table, function () {
         db.insert(table, function () {
@@ -90,7 +90,7 @@ describe('Db3', function () {
     })
   })
   describe('#copyTable()', function () {
-    it('should copy table and all its data to other table', function (done) {
+    it('copies table and all its data to other table', function (done) {
       var table = 'copyTable' + +(new Date)
       db.createTable(table, function () {
         db.insert(table, function () {
@@ -105,7 +105,7 @@ describe('Db3', function () {
     })
   })
   describe('#renameTable()', function () {
-    it('should rename table', function (done) {
+    it('renames table', function (done) {
       var table = 'renameTable' + +(new Date)
       db.createTable(table, function () {
         db.insert(table, function () {
@@ -120,13 +120,13 @@ describe('Db3', function () {
     })
   })
   describe('#insert()', function () {
-    it('should insert empty item', function (done) {
+    it('inserts empty item', function (done) {
       db.insert('test', function (err, data) {
         expect(data.insertId).to.be.above(0)
         done()
       })
     })
-    it('should insert item', function (done) {
+    it('inserts item', function (done) {
       db.insert('test', {name: 'test'}, function (err, data) {
         db.select('test', data.insertId, function (err, data) {
           expect(data.name).to.be.equal('test')
@@ -134,10 +134,9 @@ describe('Db3', function () {
         })
       })
     })
-    it('should create writeable insert stream', function (done) {
+    it('creates writeable insert stream', function (done) {
       var table = 'person' + +(new Date)
       db.createTable(table, ['id', 'name', 'gender'], function () {
-        db.select('person')
         var stream = db.insert(table)
         stream.on('finish', function () {
           db.count(table, function (err, count) {
@@ -151,7 +150,7 @@ describe('Db3', function () {
     })
   })
   describe('#update()', function () {
-    it('should update row', function (done) {
+    it('updates row', function (done) {
       db.insert('test', function (err, data) {
         var id = data.insertId
         db.update('test', id, {name: 'test'}, function (err, data) {
@@ -180,7 +179,7 @@ describe('Db3', function () {
     })
   })
   describe('#delete()', function () {
-    it('should delete row', function (done) {
+    it('deletes row', function (done) {
       db.insert('test', function (err, data) {
         var id = data.insertId
         db.delete('test', id, function (err, data) {
@@ -191,7 +190,7 @@ describe('Db3', function () {
         })
       })
     })
-    it('should create writeable delete stream', function (done) {
+    it('creates writeable delete stream', function (done) {
       var table = 'person' + +(new Date)
       db.copyTable('person', table, function () {
         db.select(table).pipe(db.delete(table)).on('finish', function () {
@@ -204,7 +203,7 @@ describe('Db3', function () {
     })
   })
   describe('#save()', function () {
-    it('should insert a new row', function (done) {
+    it('inserts a new row', function (done) {
       db.save('test', function (err, data) {
         db.select('test', data.insertId, function (err, data) {
           expect(data).to.have.property('id')
@@ -212,7 +211,7 @@ describe('Db3', function () {
         })
       })
     })
-    it('should update an existing row', function (done) {
+    it('updates an existing row', function (done) {
       db.save('test', function (err, data) {
         var item = {id: data.insertId, name: 'test'}
         db.save('test', item, function (err, data) {
@@ -223,7 +222,7 @@ describe('Db3', function () {
         })
       })
     })
-    it('should update an existing row using specified fields', function (done) {
+    it('updates an existing row using specified fields', function (done) {
       var item = {name: 'test'}
       db.save('test', item, function (err, data) {
         item.id = data.insertId
@@ -237,7 +236,7 @@ describe('Db3', function () {
         })
       })
     })
-    it('should create writeable save stream', function (done) {
+    it('creates writeable save stream', function (done) {
       var table = 'person' + +(new Date)
       db.createTable(table, ['id', 'name', 'gender'], function () {
         db.select('person').pipe(db.save(table)).on('finish', function () {
@@ -264,49 +263,49 @@ describe('Db3', function () {
     })
   })
   describe('#select()', function () {
-    it('should select an item from table', function (done) {
+    it('selects an item from table', function (done) {
       db.select('person', {name: 'God'}, function (err, data) {
         expect(data[0].name).to.equal('God')
         done()
       })
     })
-    it('should select an item from table using "in ()"', function (done) {
+    it('selects an item from table using "in ()"', function (done) {
       db.select('person', {id: [1, 2]}, function (err, data) {
         expect(data).to.have.length(2)
         done()
       })
     })
-    it('should select an item from table using "between"', function (done) {
+    it('selects an item from table using "between"', function (done) {
       db.select('person', {id: {from: 2, to: 4}}, function (err, data) {
         expect(data).to.have.length(3)
         done()
       })
     })
-    it('should select an item from table using ">="', function (done) {
+    it('selects an item from table using ">="', function (done) {
       db.select('person', {id: {from: 2}}, function (err, data) {
         expect(data).to.have.length(5)
         done()
       })
     })
-    it('should select an item from table using "<="', function (done) {
+    it('selects an item from table using "<="', function (done) {
       db.select('person', {id: {to: 2}}, function (err, data) {
         expect(data).to.have.length(2)
         done()
       })
     })
-    it('should select an item from table using shorthand id syntax', function (done) {
+    it('selects an item from table using shorthand id syntax', function (done) {
       db.select('person', 3, function (err, data) {
         expect(data.name).to.equal('Eve')
         done()
       })
     })
-    it('should select an item field from table using shorthand id/name syntax', function (done) {
+    it('selects an item field from table using shorthand id/name syntax', function (done) {
       db.select('person', 3, 'name', function (err, data) {
         expect(data).to.equal('Eve')
         done()
       })
     })
-    it('should create readable select stream', function (done) {
+    it('creates readable select stream', function (done) {
       var count = 0
       db.select('person').
         on('data', function (err, data) {count++}).
@@ -370,25 +369,25 @@ describe('Db3', function () {
     }
     _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
       var name = func + '(' + (groupBy[func].field || 'id') + ')'
-      it('should select ' + name  + ' from table', function (done) {
+      it('selects ' + name  + ' from table', function (done) {
         db[func]('person', function (err, data) {
           expect(data).to.equal(groupBy[func].fullTable)
           done()
         })
       })
-      it('should select ' + name + ' from table filtered by condition', function (done) {
+      it('selects ' + name + ' from table filtered by condition', function (done) {
         db[func]('person', {name: 'Adam'}, function (err, data) {
           expect(data).to.equal(groupBy[func].filtered)
           done()
         })
       })
-      it('should select ' + name + ' from table grouped by field', function (done) {
+      it('selects ' + name + ' from table grouped by field', function (done) {
         db[func]('person', ['gender', 'id'], function (err, data) {
           expect(_.findWhere(data, groupBy[func].grouped)).to.be.ok
           done()
         })
       })
-      it('should select ' + name + ' from table filtered by condition and grouped by field', function (done) {
+      it('selects ' + name + ' from table filtered by condition and grouped by field', function (done) {
         db[func]('person', {name: 'Cain'}, ['gender', 'id'], function (err, data) {
           expect(_.findWhere(data, groupBy[func].filteredGrouped)).to.be.ok
           done()
@@ -397,13 +396,13 @@ describe('Db3', function () {
     })
   })
   describe('#query()', function () {
-    it('should return summary data grouped by name', function (done) {
+    it('returns summary data grouped by name', function (done) {
       db.query('select ??, count(*) from ?? group by ??', ['name', 'test', 'name'], function (err, data) {
         expect(data).to.have.length.above(0)
         done()
       })
     })
-    it('should return readable stream if no callback provided', function (done) {
+    it('returns readable stream if no callback provided', function (done) {
       var count = 0
       db.query('select * from ??', 'person').
         on('data', function (err, data) {count++}).
@@ -414,7 +413,7 @@ describe('Db3', function () {
     })
   })
   describe('#csv()', function () {
-    it('should stream select to csv', function (done) {
+    it('streams select to csv', function (done) {
       var stream = csv.format({headers: true})
       var count = 0
       stream.on('data', function (err, data) {count++})
@@ -424,7 +423,7 @@ describe('Db3', function () {
       })
       db.select('person').pipe(stream)
     })
-    it('should stream csv to insert', function (done) {
+    it('streams csv to insert', function (done) {
       var table = 'csv' + +(new Date)
       db.createTable(table, function () {
         var stream = db.insert(table)

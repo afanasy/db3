@@ -3,9 +3,7 @@ var
   stream = require('stream'),
   mysql = require('mysql'),
   shortid = require('shortid'),
-  set = require('db3-set'),
-  where = require('db3-where'),
-  orderBy = require('db3-order-by')
+  queryString = require('db3-query-string')
 
 exports.connect = function (d) {
   return new Db3(mysql.createPool(d))
@@ -24,8 +22,7 @@ var Db3 = function (d) {
 
 _.extend(Db3.prototype, {
   format: mysql.format,
-  where: where,
-  orderBy: orderBy,
+  queryString: queryString,
   end: function (done) {
     return this.db.end(done)
   },
@@ -38,34 +35,39 @@ _.extend(Db3.prototype, {
       done = field
       field = undefined
     }
-    if (!_.size(field))
-      field = ['id', 'name']
-    field = _.map(field, function (field) {
-      var type = 'text'
-      if (field == 'id')
-        type = 'bigint primary key auto_increment'
-      if (field.match(/Id$/))
-        type = 'bigint'
-      return mysql.escapeId(field) + ' ' + type
-    }).join(', ')
-    this.query('create table ' + mysql.escapeId(table) + ' (' + field + ')', function (err, data) {
+    this.query({name: 'createTable', table: table, field: field}, function (err, data) {
       data = data || {}
       data.table = table
       done(err, data)
     })
   },
   dropTable: function (table, done) {
-    this.query(mysql.format('drop table ??', table), done)
+    this.query({name: 'dropTable', table: table}, done)
+  },
+  truncateTable: function (table, done) {
+    this.query({name: 'truncateTable', table: table}, done)
+  },
+  renameTable: function (from, to, done) {
+    if (_.isFunction(to)) {
+      done = to
+      to = undefined
+    }
+    if (!to)
+      to = from + shortid.generate()
+    this.query({name: 'renameTable', table: from, to: to}, function (err, data) {
+      if (err)
+        return done(err, null)
+      data = data || {}
+      data.table = to
+      done(err, data)
+    })
   },
   tableExists: function (table, done) {
-    this.query(mysql.format('select 1 from ?? limit 1', table), function (err, data) {
+    this.query({name: 'select', table: table, limit: 1}, function (err, data) {
       if (!err)
         return done(null, true)
       done(null, false)
     })
-  },
-  truncateTable: function (table, done) {
-    this.query(mysql.format('truncate table ??', table), done)
   },
   copyTable: function (from, to, done) {
     if (_.isFunction(to)) {
@@ -75,31 +77,16 @@ _.extend(Db3.prototype, {
     if (!to)
       to = from + shortid.generate()
     var self = this
-    self.query(mysql.format('create table ?? like ??', [to, from]), function (err, data) {
+    self.query({name: 'createTable', table: to, like: from}, function (err, data) {
       if (err)
         return done(err, null)
-      self.query(mysql.format('insert ?? select * from ??', [to, from]), function (err, data) {
+      self.query({name: 'insert', table: to, select: from}, function (err, data) {
         if (err)
           return done(err, null)
         data = data || {}
         data.table = to
         done(err, data)
       })
-    })
-  },
-  renameTable: function (from, to, done) {
-    if (_.isFunction(to)) {
-      done = to
-      to = undefined
-    }
-    if (!to)
-      to = from + shortid.generate()
-    this.query(mysql.format('rename table ?? to ??', [from, to]), function (err, data) {
-      if (err)
-        return done(err, null)
-      data = data || {}
-      data.table = to
-      done(err, data)
     })
   },
   insert: function (table, d, done) {
@@ -109,19 +96,18 @@ _.extend(Db3.prototype, {
     }
     if (!d || !_.size(d))
       d = {id: null}
-    var query = 'insert ' + mysql.escapeId(table) + ' set ' + set.query(d)
     if (!done) {
       var self = this
       var s = new stream.Writable({objectMode: true})
       s._write = function (d, encoding, done) {self.insert(table, d, function () {done()})}
       return s
     }
-    this.query(query, done)
+    this.query({name: 'insert', table: table, set: d}, done)
   },
   update: function (table, cond, d, done)  {
     if (_.isString(cond) || _.isNumber(cond) || _.isArray(cond))
       cond = {id: cond}
-    this.query(mysql.format('update ?? set ', table) + set.query(d) + ' where ' + where.query(cond), done)
+    this.query({name: 'update', table: table, set: d, where: cond}, done)
   },
   delete: function (table, cond, done) {
     if (_.isString(cond) || _.isNumber(cond))
@@ -132,7 +118,7 @@ _.extend(Db3.prototype, {
       s._write = function (d, encoding, done) {self.delete(table, d, function () {done()})}
       return s
     }
-    this.query('delete from ' + mysql.escapeId(table) + ' where ' + where.query(cond), done)
+    this.query({name: 'delete', table: table, where: cond}, done)
   },
   save: function (table, d, field, done) {
     if (_.isFunction(d)) {
@@ -154,7 +140,7 @@ _.extend(Db3.prototype, {
       s._write = function (d, encoding, done) {self.save(table, d, field, function () {done()})}
       return s
     }
-    this.query('insert ' + mysql.escapeId(table) + ' set ' + set.query(d) + ' on duplicate key update ' + set.query((field && _.pick(d, field)) || d), done)
+    this.query({name: 'insert', table: table, set: d, update: (field && _.pick(d, field)) || d}, done)
   },
   duplicate: function (table, id, d, done) {
     if (_.isFunction(d)) {
@@ -163,10 +149,10 @@ _.extend(Db3.prototype, {
     }
     var self = this
     var temporaryTable = 'duplicate' + shortid.generate()
-    self.query('create table ?? like ??', [temporaryTable, table], function () {
-      self.query('insert ?? select * from ?? where ?', [temporaryTable, table, {id: id}], function () {
+    self.query({name: 'createTable', table: temporaryTable, like: table}, function () {
+      self.query({name: 'insert', table: temporaryTable, select: {table: table, where: {id: id}}}, function () {
         self.update(temporaryTable, id, d, function () {
-          self.query('alter table ?? drop id', [temporaryTable], function () {
+          self.query({name: 'alterTable', table: temporaryTable, drop: 'id'}, function () {
             self.query('insert ?? select null, ??.* from ??', [table, temporaryTable, temporaryTable], function (err, data) {
               self.dropTable(temporaryTable, function () {done(err, data)})
             })
@@ -195,24 +181,8 @@ _.extend(Db3.prototype, {
     var unpackRow = _.isNumber(d.where) || _.isString(d.where)
     if (_.isNumber(d.where) || _.isString(d.where) || _.isArray(d.where))
       d.where = {id: d.where}
-    d.field = d.field || '*'
-    var unpackField = (_.isNumber(d.field) || _.isString(d.field)) && (d.field != '*') && d.field
-    if (_.isString(d.field))
-      d.field = [d.field]
-    d.field = _.map(d.field, function (d) {
-      if (d != '*')
-        return mysql.escapeId(d)
-      return d
-    }).join(', ')
-    var query = 'select ' + d.field + ' from ' + mysql.escapeId(d.table)
-    d.where = where.query(d.where)
-    if (d.where)
-      query += ' where ' + d.where
-    d.orderBy = orderBy.query(d.orderBy)
-    if (d.orderBy)
-      query += ' order by ' + d.orderBy
-    if (d.limit)
-      query += ' limit ' + +d.limit
+    var unpackField = (_.isNumber(d.field) || _.isString(d.field)) && d.field
+    var query = queryString.stringify(_.extend({name: 'select'}, _.pick(d, ['field', 'table', 'where', 'orderBy', 'limit'])))
     var unpack = function (data) {
       if (unpackField)
         data = _.pluck(data, unpackField)
@@ -236,7 +206,7 @@ _.extend(Db3.prototype, {
       done = field
       field = undefined
     }
-    cond = where.query(cond)
+    cond = queryString.where.query(cond)
     field = field || 'id'
     if (_.isString(field))
       field = [field]
@@ -265,8 +235,9 @@ _.extend(Db3.prototype, {
       done = values
       values = undefined
     }
+    var query = queryString.stringify(sql, values)
     if (!done)
-      return this.db.query(sql, values).stream()
-    return this.db.query(sql, values, done)
+      return this.db.query(query).stream()
+    return this.db.query(query, done)
   }
 })
