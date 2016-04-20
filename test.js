@@ -1,5 +1,4 @@
 var
-  expect = require('chai').expect,
   _ = require('underscore'),
   async = require('async'),
   csv = require('fast-csv'),
@@ -54,8 +53,7 @@ describe('Db3', function () {
       db.createTable(table, function () {
         db.dropTable(table, function () {
           db.tableExists(table, function (err, exists) {
-            expect(exists).not.to.be.true
-            done()
+            done(exists == true)
           })
         })
       })
@@ -64,8 +62,7 @@ describe('Db3', function () {
   describe('#tableExists()', function () {
     it('checks if table exists', function (done) {
       db.tableExists('tableExists' + +(new Date), function (err, exists) {
-        expect(exists).not.to.be.true
-        done()
+        done(exists == true)
       })
     })
   })
@@ -76,8 +73,7 @@ describe('Db3', function () {
         db.insert(table, function () {
           db.truncateTable(table, function () {
             db.count(table, function (err, count) {
-              expect(count).to.equal(0)
-              done()
+              done(count != 0)
             })
           })
         })
@@ -91,8 +87,7 @@ describe('Db3', function () {
         db.insert(table, function () {
           db.copyTable(table, function (err, data) {
             db.count(data.table, function (err, count) {
-              expect(count).to.be.above(0)
-              done()
+              done(count <= 0)
             })
           })
         })
@@ -106,8 +101,7 @@ describe('Db3', function () {
         db.insert(table, function () {
           db.renameTable(table, function (err, data) {
             db.count(data.table, function (err, count) {
-              expect(count).to.be.above(0)
-              done()
+              done(count <= 0)
             })
           })
         })
@@ -117,15 +111,13 @@ describe('Db3', function () {
   describe('#insert()', function () {
     it('inserts empty item', function (done) {
       db.insert('test', function (err, data) {
-        expect(data.insertId).to.be.above(0)
-        done()
+        done(data.insertId <= 0)
       })
     })
     it('inserts item', function (done) {
       db.insert('test', {name: 'test'}, function (err, data) {
         db.select('test', data.insertId, function (err, data) {
-          expect(data.name).to.be.equal('test')
-          done()
+          done(data.name != 'test')
         })
       })
     })
@@ -135,8 +127,7 @@ describe('Db3', function () {
         var stream = db.insert(table)
         stream.on('finish', function () {
           db.count(table, function (err, count) {
-            expect(count).to.be.above(0)
-            done()
+            done(count <= 0)
           })
         })
         stream.write({})
@@ -150,8 +141,7 @@ describe('Db3', function () {
         var id = data.insertId
         db.update('test', id, {name: 'test'}, function (err, data) {
           db.select('test', id, function (err, data) {
-            expect(data.name).to.equal('test')
-            done()
+            done(data.name != 'test')
           })
         })
       })
@@ -163,10 +153,7 @@ describe('Db3', function () {
           id.push(data.insertId)
           db.update('test', id, {name: 'test'}, function (err, data) {
             db.select('test', id, function (err, data) {
-              expect(data.length).to.equal(id.length)
-              expect(data[0].name).to.equal('test')
-              expect(data[1].name).to.equal('test')
-              done()
+              done((data.length != id.length) || (data[0].name != 'test') || (data[1].name != 'test'))
             })
           })
         })
@@ -179,8 +166,7 @@ describe('Db3', function () {
         var id = data.insertId
         db.delete('test', id, function (err, data) {
           db.select('test', id, function (err, data) {
-            expect(data).to.be.undefined
-            done()
+            done(!_.isUndefined(data))
           })
         })
       })
@@ -190,8 +176,7 @@ describe('Db3', function () {
       db.copyTable('person', table, function () {
         db.select(table).pipe(db.delete(table)).on('finish', function () {
           db.count(table, function (err, count) {
-            expect(count).to.equal(0)
-            done()
+            done(count != 0)
           })
         })
       })
@@ -201,8 +186,7 @@ describe('Db3', function () {
     it('inserts a new row', function (done) {
       db.save('test', function (err, data) {
         db.select('test', data.insertId, function (err, data) {
-          expect(data).to.have.property('id')
-          done()
+          done(!data.id)
         })
       })
     })
@@ -211,8 +195,7 @@ describe('Db3', function () {
         var item = {id: data.insertId, name: 'test'}
         db.save('test', item, function (err, data) {
           db.select('test', item.id, function (err, data) {
-            expect(data).to.have.property('name', item.name)
-            done()
+            done(data.name != item.name)
           })
         })
       })
@@ -224,9 +207,7 @@ describe('Db3', function () {
         item.name = 'tset'
         db.save('test', item, 'id', function (err, data) {
           db.select('test', item.id, function (err, data) {
-            expect(data).to.have.property('name')
-            expect(data.name).not.to.equal(item.name)
-            done()
+            done(!data.name || (data.name == item.name))
           })
         })
       })
@@ -236,8 +217,7 @@ describe('Db3', function () {
       db.createTable(table, ['id', 'name', 'gender'], function () {
         db.select('person').pipe(db.save(table)).on('finish', function () {
           db.count(table, function (err, count) {
-            expect(count).to.equal(person.length)
-            done()
+            done(count != person.length)
           })
         })
       })
@@ -248,10 +228,10 @@ describe('Db3', function () {
       db.insert('test', function (err, data) {
         var id = data.insertId
         db.duplicate('test', id, function (err, data) {
-          expect(data.insertId).to.not.equal(id)
+          if (data.insertId == id)
+            return done(true)
           db.count('test', data.insertId, function (err, data) {
-            expect(data).to.equal(1)
-            done()
+            done(data != 1)
           })
         })
       })
@@ -260,44 +240,37 @@ describe('Db3', function () {
   describe('#select()', function () {
     it('selects an item from table', function (done) {
       db.select('person', {name: 'God'}, function (err, data) {
-        expect(data[0].name).to.equal('God')
-        done()
+        done(data[0].name != 'God')
       })
     })
     it('selects an item from table using "in ()"', function (done) {
       db.select('person', {id: [1, 2]}, function (err, data) {
-        expect(data).to.have.length(2)
-        done()
+        done(data.length != 2)
       })
     })
     it('selects an item from table using "between"', function (done) {
       db.select('person', {id: {from: 2, to: 4}}, function (err, data) {
-        expect(data).to.have.length(3)
-        done()
+        done(data.length != 3)
       })
     })
     it('selects an item from table using ">="', function (done) {
       db.select('person', {id: {from: 2}}, function (err, data) {
-        expect(data).to.have.length(5)
-        done()
+        done(data.length != 5)
       })
     })
     it('selects an item from table using "<="', function (done) {
       db.select('person', {id: {to: 2}}, function (err, data) {
-        expect(data).to.have.length(2)
-        done()
+        done(data.length != 2)
       })
     })
     it('selects an item from table using shorthand id syntax', function (done) {
       db.select('person', 3, function (err, data) {
-        expect(data.name).to.equal('Eve')
-        done()
+        done(data.name != 'Eve')
       })
     })
     it('selects an item field from table using shorthand id/name syntax', function (done) {
       db.select('person', 3, 'name', function (err, data) {
-        expect(data).to.equal('Eve')
-        done()
+        done(data != 'Eve')
       })
     })
     it('creates readable select stream', function (done) {
@@ -305,32 +278,27 @@ describe('Db3', function () {
       db.select('person').
         on('data', function (err, data) {count++}).
         on('end', function () {
-          expect(count).to.be.above(0)
-          done()
+          done(count <= 0)
         })
     })
     it('selects from object with orderBy', function (done) {
       db.select({table: 'person', field: 'name', orderBy: {name: 'desc'}}, function (err, data) {
-        expect(data[0]).to.equal('Seth')
-        done()
+        done(data[0] != 'Seth')
       })
     })
     it('selects from object with limit', function (done) {
       db.select({table: 'person', limit: 10}, function (err, data) {
-        expect(data.length).to.equal(person.length)
-        done()
+        done(data.length != person.length)
       })
     })
     it('selects with empty condition', function (done) {
       db.select('person', {}, function (err, data) {
-        expect(data.length).to.equal(person.length)
-        done()
+        done(data.length != person.length)
       })
     })
     it('returns err on invalid query', function (done) {
       db.select(+new Date, function (err) {
-        expect(err).to.be.not.empty
-        done()
+        done(!err)
       })
     })
   })
@@ -372,26 +340,22 @@ describe('Db3', function () {
       var name = func + '(' + (groupBy[func].field || 'id') + ')'
       it('selects ' + name  + ' from table', function (done) {
         db[func]('person', function (err, data) {
-          expect(data).to.equal(groupBy[func].fullTable)
-          done()
+          done(data != groupBy[func].fullTable)
         })
       })
       it('selects ' + name + ' from table filtered by condition', function (done) {
         db[func]('person', {name: 'Adam'}, function (err, data) {
-          expect(data).to.equal(groupBy[func].filtered)
-          done()
+          done(data != groupBy[func].filtered)
         })
       })
       it('selects ' + name + ' from table grouped by field', function (done) {
         db[func]('person', ['gender', 'id'], function (err, data) {
-          expect(_.findWhere(data, groupBy[func].grouped)).to.be.ok
-          done()
+          done(!_.findWhere(data, groupBy[func].grouped))
         })
       })
       it('selects ' + name + ' from table filtered by condition and grouped by field', function (done) {
         db[func]('person', {name: 'Cain'}, ['gender', 'id'], function (err, data) {
-          expect(_.findWhere(data, groupBy[func].filteredGrouped)).to.be.ok
-          done()
+          done(!_.findWhere(data, groupBy[func].filteredGrouped))
         })
       })
     })
@@ -399,8 +363,7 @@ describe('Db3', function () {
   describe('#query()', function () {
     it('returns summary data grouped by name', function (done) {
       db.query('select ??, count(*) from ?? group by ??', ['name', 'test', 'name'], function (err, data) {
-        expect(data).to.have.length.above(0)
-        done()
+        done(data.length <= 0)
       })
     })
     it('returns readable stream if no callback provided', function (done) {
@@ -408,8 +371,7 @@ describe('Db3', function () {
       db.query('select * from ??', 'person').
         on('data', function (err, data) {count++}).
         on('end', function () {
-          expect(count).to.equal(person.length)
-          done()
+          done(count != person.length)
         })
     })
   })
@@ -419,8 +381,7 @@ describe('Db3', function () {
       var count = 0
       stream.on('data', function (err, data) {count++})
       stream.on('finish', function () {
-        expect(count).to.be.above(0)
-        done()
+        done(count <= 0)
       })
       db.select('person').pipe(stream)
     })
@@ -430,8 +391,7 @@ describe('Db3', function () {
         var stream = db.insert(table)
         stream.on('finish', function () {
           db.count(table, function (err, count) {
-            expect(count).to.be.above(0)
-            done()
+            done(count <= 0)
           })
         })
         csv.fromString("name\ncsv1\ncsv2\n", {headers: true}).pipe(stream)
