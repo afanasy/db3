@@ -29,8 +29,7 @@ describe('Db3', function () {
     it('connects to the db', function (done) {
       var db = db3().connect({user: 'root', database : 'test'})
       db.query('select 1', function (err, data) {
-        expect(data).to.have.length(1)
-        done()
+        done(data.length !== 1)
       })
     })
   })
@@ -44,8 +43,7 @@ describe('Db3', function () {
       var table = 'createTable' + +(new Date)
       db.createTable(table, function () {
         db.tableExists(table, function (err, exists) {
-          expect(exists).to.be.true
-          done()
+          done(exists !== true)
         })
       })
     })
@@ -437,6 +435,29 @@ describe('Db3', function () {
           })
         })
         csv.fromString("name\ncsv1\ncsv2\n", {headers: true}).pipe(stream)
+      })
+    })
+  })
+  describe('#use', function () {
+    beforeEach(function () {db.reset()})
+    it('uses mw', function (done) {
+      db.use(true, function (ctx, next) {
+        ctx.data.push(true)
+        next()
+      })
+      db.select('person', function (err, data) {
+        done(_.last(data) !== true)
+      })
+    })
+    it('matching string filter', function (done) {
+      db.use('select', function (ctx, next) {
+        ctx.data.push(true)
+        next()
+      })
+      db.createTable(+new Date, function () {
+        db.select('person', function (err, data) {
+          done(_.last(data) !== true)
+        })
       })
     })
   })

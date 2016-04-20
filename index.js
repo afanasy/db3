@@ -16,10 +16,7 @@ function Db3 (d) {
       return self.groupBy(func, table, cond, field, done)
     }
   })
-  this.stack = []
-  this.use(true, this.stringify())
-  this.use(true, this.dbQuery())
-  this.use(true, this.unpack())
+  this.reset()
   if (d)
     this.connect(d)
   return this
@@ -263,6 +260,20 @@ _.extend(Db3.prototype, {
     }
     return next()
   },
+  match: function (filter, sql) {
+    if (filter === true)
+      return true
+    return filter == sql.name
+  },
+  use: function (filter, fn) {
+    this.stack.push({filter: filter, fn: fn})
+  },
+  reset: function () {
+    this.stack = []
+    this.use(true, this.stringify())
+    this.use(true, this.dbQuery())
+    this.use(true, this.unpack())
+  },
   stringify: function () {
     return function (ctx, next) {
       ctx.queryString = queryString.stringify(ctx.sql, ctx.values)
@@ -286,13 +297,5 @@ _.extend(Db3.prototype, {
       ctx.data = ctx.sql.unpack(ctx.data)
       next()
     }
-  },
-  match: function (filter, sql) {
-    if (filter === true)
-      return true
-    return filter == sql.name
-  },
-  use: function (filter, fn) {
-    this.stack.push({filter: filter, fn: fn})
   }
 })
