@@ -4,7 +4,7 @@ var
   async = require('async'),
   csv = require('fast-csv'),
   db3 = require('./'),
-  db = db3.connect({user: 'root', database : 'test'})
+  db = db3({user: 'root', database : 'test'})
 
 var person = [
   {name: 'God', gender: 'god'},
@@ -17,19 +17,17 @@ var person = [
 
 describe('Db3', function () {
   before(function (done) {
-    db.dropTable('test', function () {
-      db.dropTable('person', function () {
-        async.series([
-          db.createTable.bind(db, 'test'),
-          db.createTable.bind(db, 'person', ['id', 'name', 'gender']),
-          async.eachSeries.bind(async, person, db.insert.bind(db, 'person'))
-        ], done)
-      })
-    })
+    async.series([
+      function (done) {db.dropTable('test', function () {done()})},
+      db.createTable.bind(db, 'test'),
+      function (done) {db.dropTable('person', function () {done()})},
+      db.createTable.bind(db, 'person', ['id', 'name', 'gender']),
+      async.eachSeries.bind(async, person, db.insert.bind(db, 'person'))
+    ], done)
   })
   describe('#connect()', function () {
     it('connects to the db', function (done) {
-      var db = db3.connect({user: 'root', database : 'test'})
+      var db = db3().connect({user: 'root', database : 'test'})
       db.query('select 1', function (err, data) {
         expect(data).to.have.length(1)
         done()
@@ -38,7 +36,7 @@ describe('Db3', function () {
   })
   describe('#end()', function () {
     it('disconnects from db', function (done) {
-      db3.connect({user: 'root', database : 'test'}).end(done)
+      db3().connect({user: 'root', database : 'test'}).end(done)
     })
   })
   describe('#createTable()', function () {
@@ -73,7 +71,6 @@ describe('Db3', function () {
       })
     })
   })
-
   describe('#truncateTable()', function () {
     it('truncates table', function (done) {
       var table = 'truncateTable' + +(new Date)
@@ -329,6 +326,12 @@ describe('Db3', function () {
     it('selects with empty condition', function (done) {
       db.select('person', {}, function (err, data) {
         expect(data.length).to.equal(person.length)
+        done()
+      })
+    })
+    it('returns err on invalid query', function (done) {
+      db.select(+new Date, function (err) {
+        expect(err).to.be.not.empty
         done()
       })
     })

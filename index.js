@@ -5,24 +5,33 @@ var
   shortid = require('shortid'),
   queryString = require('db3-query-string')
 
-exports.connect = function (d) {
-  return new Db3(mysql.createPool(d))
+module.exports = function (d) {
+  return new Db3(d)
 }
 
-var Db3 = function (d) {
-  this.db = d
+function Db3 (d) {
   var self = this
   _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
     self[func] = function (table, cond, field, done) {
       return self.groupBy(func, table, cond, field, done)
     }
   })
+  this.stack = []
+  this.use(true, this.stringify())
+  this.use(true, this.dbQuery())
+  this.use(true, this.unpack())
+  if (d)
+    this.connect(d)
   return this
 }
 
 _.extend(Db3.prototype, {
   format: mysql.format,
   queryString: queryString,
+  connect: function (d) {
+    this.db = mysql.createPool(d)
+    return this
+  },
   end: function (done) {
     return this.db.end(done)
   },
@@ -171,7 +180,7 @@ _.extend(Db3.prototype, {
       done = field
       field = undefined
     }
-    if (_.isString(d)) {
+    if (_.isNumber(d) || _.isString(d)) {
       d = {
         table: d,
         where: cond,
@@ -182,19 +191,20 @@ _.extend(Db3.prototype, {
     if (_.isNumber(d.where) || _.isString(d.where) || _.isArray(d.where))
       d.where = {id: d.where}
     var unpackField = (_.isNumber(d.field) || _.isString(d.field)) && d.field
-    var query = queryString.stringify(_.extend({name: 'select'}, _.pick(d, ['field', 'table', 'where', 'orderBy', 'limit'])))
-    var unpack = function (data) {
-      if (unpackField)
-        data = _.pluck(data, unpackField)
-      if (unpackRow)
-        data = data[0]
-      return data
-    }
-    if (!done)
-      return this.db.query(query).stream()
-    this.query(query, function (err, data, fields) {
-      done(err, unpack(data), fields)
-    })
+    var query = _.extend(
+      {
+        name: 'select',
+        unpack: function (data) {
+          if (unpackField)
+            data = _.pluck(data, unpackField)
+          if (unpackRow)
+            data = data[0]
+          return data
+        }
+      },
+      _.pick(d, ['field', 'table', 'where', 'orderBy', 'limit'])
+    )
+    return this.query(query, done)
   },
   groupBy: function (func, table, cond, field, done) {
     if (_.isFunction(cond) || _.isArray(cond)) {
@@ -235,9 +245,54 @@ _.extend(Db3.prototype, {
       done = values
       values = undefined
     }
-    var query = queryString.stringify(sql, values)
     if (!done)
-      return this.db.query(query).stream()
-    return this.db.query(query, done)
+      return this.db.query(queryString.stringify(sql, values)).stream()
+    var self = this
+    var i = 0
+    var ctx = {
+      sql: sql,
+      values: values
+    }
+    function next (err) {
+      var use = self.stack[i++]
+      if (err || !use || !use.fn)
+        return done(err, ctx.data)
+      if (self.match(use.filter, sql))
+        return use.fn(ctx, next)
+      return next()
+    }
+    return next()
+  },
+  stringify: function () {
+    return function (ctx, next) {
+      ctx.queryString = queryString.stringify(ctx.sql, ctx.values)
+      next()
+    }
+  },
+  dbQuery: function () {
+    var self = this
+    return function (ctx, next) {
+      self.db.query(ctx.queryString, function (err, data, fields) {
+        ctx.data = data
+        ctx.fields = fields
+        next(err)
+      })
+    }
+  },
+  unpack: function () {
+    return function (ctx, next) {
+      if (!ctx.sql || !ctx.sql.unpack)
+        return next()
+      ctx.data = ctx.sql.unpack(ctx.data)
+      next()
+    }
+  },
+  match: function (filter, sql) {
+    if (filter === true)
+      return true
+    return filter == sql.name
+  },
+  use: function (filter, fn) {
+    this.stack.push({filter: filter, fn: fn})
   }
 })

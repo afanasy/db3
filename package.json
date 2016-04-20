@@ -19,7 +19,7 @@
     "mysql": "2.9.0",
     "underscore": "1.8.3",
     "shortid": "2.2.2",
-    "db3-query-string": "1.0.3"
+    "db3-query-string": "1.0.4"
   },
   "devDependencies": {
     "chai": "*",
