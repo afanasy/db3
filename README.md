@@ -21,22 +21,20 @@
  * [Selecting](#selecting)
  * [Aggregate functions](#aggregate-functions)
  * [SQL query](#sql-query)
+ * [Advanced queries](#advanced-queries)
+ * [Plugins](#plugins)
  * [Streaming](#streaming)
 
 ## Introduction
-Db3 replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used SQL patterns, rather than trying to cover the whole SQL specification. It may be useful for those who doesn't know or doesn't want to use SQL, but still interested in using mysql as backend db. Db3 is based on excellent [node-mysql](https://github.com/felixge/node-mysql) lib. For PHP alternative check out the [Medoo](http://medoo.in/) project.
+Db3 provides a framework and query format for data exchange. It replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used data lookup patterns. It may be useful for those who doesn't know or doesn't want to use SQL, but still interested in communicating with the SQL based db. 
 
-## Installation
-```sh
-npm install db3
-```
-
-## Connecting
+## Setup
 ```javascript
-var db3 = require('db3')
-var db = db3.connect({host: 'example.org', user: 'bob', password: 'secret', database : 'test'})
+var db = require('db3')()
+
+db.use(require('db3-streamify')) //optional plugin for streaming
+db.use(require('db3-mysql')({host: 'example.org', user: 'bob', password: 'secret', database : 'test'})) // MySQL plugin, see [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
 ```
-connection options object passed directly to [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
 
 ## Disconnecting
 ```javascript
@@ -229,7 +227,7 @@ db.sum('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function
 ```
 
 ## SQL query
-Proxied to the underlying node-mysql lib, but with swapped 'err' and 'data' arguments (more info [here](https://github.com/felixge/node-mysql#performing-queries))
+Proxied to the underlying SQL layer
 ```javascript
 db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10', ['gender', 'person', 'gender'], function (err, data) {
   console.log(data)
@@ -237,8 +235,17 @@ db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10'
 })
 ```
 
+## Advanced queries
+You can use query objects directly
+```js
+db({name: 'select', table: 'person', field: 'name'}, function (err, data) {
+  console.log(data)
+  //[{name: 'Bob'}, {name: 'Alice'}]
+})
+```
+
 ## Streaming
-Without callback select and insert functions return readable and writeable streams respectively. They can be used to pipe data to other streams (useful for big amounts of data).
+Without callback most functions return streams
 ```javascript
 //streaming select, outputs all rows in the table
 db.select('person').on('data', console.log)
@@ -256,6 +263,15 @@ db.query('select * from person').on('data', console.log)
 csv.fromPath('my.csv').pipe(db.insert('person'))
 //streaming from csv stream to insert, inserts csv formatted readable stream content into the table
 csv.fromStream(readableStream).pipe(db.insert('person'))
+```
+
+## Plugins
+To add pluging use .use
+```js
+db.use(function (ctx, next) {
+  //do something
+  next() //accepts optional err argument
+})
 ```
 
 [downloads-image]: https://img.shields.io/npm/dm/db3.svg
