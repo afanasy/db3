@@ -159,6 +159,20 @@ describe('Db3', function () {
         })
       })
     })
+    it('creates writeable update stream', function (done) {
+      var table = 'person' + +(new Date)
+      db.copyTable('person', table, function () {
+        var update = {name: 'test'}
+        var stream = db.update(table, 1)
+        stream.on('finish', function () {
+          db.count(table, update, function (err, count) {
+            done(count <= 0)
+          })
+        })
+        stream.write(update)
+        stream.end()
+      })
+    })
   })
   describe('#delete()', function () {
     it('deletes row', function (done) {
@@ -276,7 +290,7 @@ describe('Db3', function () {
     it('creates readable select stream', function (done) {
       var count = 0
       db.select('person').
-        on('data', function (err, data) {count++}).
+        on('data', function (data) {data && data.id && count++}).
         on('end', function () {
           done(count <= 0)
         })

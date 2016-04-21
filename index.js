@@ -100,31 +100,17 @@ _.extend(Db3.prototype, {
       done = d
       d = undefined
     }
-    if (!d || !_.size(d))
-      d = {id: null}
-    if (!done) {
-      var self = this
-      var s = new stream.Writable({objectMode: true})
-      s._write = function (d, encoding, done) {self.insert(table, d, function () {done()})}
-      return s
-    }
-    this.query({name: 'insert', table: table, set: d}, done)
+    return this.query({name: 'insert', table: table, set: d}, done)
   },
   update: function (table, cond, d, done)  {
     if (_.isString(cond) || _.isNumber(cond) || _.isArray(cond))
       cond = {id: cond}
-    this.query({name: 'update', table: table, set: d, where: cond}, done)
+    return this.query({name: 'update', table: table, set: d, where: cond}, done)
   },
   delete: function (table, cond, done) {
     if (_.isString(cond) || _.isNumber(cond))
       cond = {id: cond}
-    if (!done) {
-      var self = this
-      var s = new stream.Writable({objectMode: true})
-      s._write = function (d, encoding, done) {self.delete(table, d, function () {done()})}
-      return s
-    }
-    this.query({name: 'delete', table: table, where: cond}, done)
+    return this.query({name: 'delete', table: table, where: cond}, done)
   },
   save: function (table, d, field, done) {
     if (_.isFunction(d)) {
@@ -140,13 +126,7 @@ _.extend(Db3.prototype, {
       d = {id: null}
     if (_.isString(field))
       field = [field]
-    if (!done) {
-      var self = this
-      var s = new stream.Writable({objectMode: true})
-      s._write = function (d, encoding, done) {self.save(table, d, field, function () {done()})}
-      return s
-    }
-    this.query({name: 'insert', table: table, set: d, update: (field && _.pick(d, field)) || d}, done)
+    return this.query({name: 'insert', table: table, set: d, update: (field && _.pick(d, field)) || d}, done)
   },
   duplicate: function (table, id, d, done) {
     if (_.isFunction(d)) {
@@ -242,19 +222,20 @@ _.extend(Db3.prototype, {
       done = values
       values = undefined
     }
-    if (!done)
-      return this.db.query(queryString.stringify(sql, values)).stream()
-    var self = this
-    var i = 0
-    var ctx = {
+    return this.pump({
+      i: 0,
       sql: sql,
-      values: values
-    }
+      values: values,
+      done: done
+    })
+  },
+  pump: function (ctx) {
+    var self = this
     function next (err) {
-      var use = self.stack[i++]
+      var use = self.pipeline[ctx.i++]
       if (err || !use || !use.fn)
-        return done(err, ctx.data)
-      if (self.match(use.filter, sql))
+        return ctx.done(err, ctx.data)
+      if (self.match(use.filter, ctx.sql))
         return use.fn(ctx, next)
       return next()
     }
@@ -266,23 +247,60 @@ _.extend(Db3.prototype, {
     return filter == sql.name
   },
   use: function (filter, fn) {
-    this.stack.push({filter: filter, fn: fn})
+    this.pipeline.push({filter: filter, fn: fn})
   },
   reset: function () {
-    this.stack = []
+    this.pipeline = []
     this.use(true, this.stringify())
-    this.use(true, this.dbQuery())
+    this.use(true, this.streamify())
+    this.use(true, this.mysql())
     this.use(true, this.unpack())
   },
   stringify: function () {
     return function (ctx, next) {
       ctx.queryString = queryString.stringify(ctx.sql, ctx.values)
-      next()
+      return next()
     }
   },
-  dbQuery: function () {
+  streamify: function (ctx, next) {
     var self = this
     return function (ctx, next) {
+      if (_.isFunction(ctx.done))
+        return next()
+      if (ctx.sql) {
+        if (_.contains(['insert', 'update', 'delete'], ctx.sql.name)) {
+          return new stream.Writable({
+            objectMode: true,
+            write: function (data, encoding, next) {
+              if (ctx.sql.name != 'delete')
+                ctx.sql.set = data
+              else
+                ctx.sql.where = data
+              self.query(ctx.sql, next)
+            }
+          })
+        }
+      }
+      return next()
+    }
+  },
+  mysql: function () {
+    var self = this
+    return function (ctx, next) {
+      if (!_.isFunction(ctx.done)) {
+        return self.db.query(ctx.queryString).stream().pipe(new stream.Transform({
+          objectMode: true,
+          transform: function (data, encoding, next) {
+            //ctx = _.clone(ctx)
+            //ctx.data = data
+            //ctx.done = function (err, data) {
+              this.push(data)
+              next()
+            //}.bind(this)
+            //self.pump(ctx)
+          }
+        }))
+      }
       self.db.query(ctx.queryString, function (err, data, fields) {
         ctx.data = data
         ctx.fields = fields
@@ -295,7 +313,7 @@ _.extend(Db3.prototype, {
       if (!ctx.sql || !ctx.sql.unpack)
         return next()
       ctx.data = ctx.sql.unpack(ctx.data)
-      next()
+      return next()
     }
   }
 })
