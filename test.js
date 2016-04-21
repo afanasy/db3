@@ -2,12 +2,20 @@ var
   _ = require('underscore'),
   async = require('async'),
   csv = require('fast-csv'),
+  db3Streamify = require('db3-streamify'),
   db3Mysql = require('db3-mysql'),
-  db3 = require('./')
+  db3 = require('./'),
+  db = db3()
 
-var db = db3().
-  use(db3Mysql({user: 'root', database : 'test'})).
-  use('unpack')
+function reset (done) {
+  db.end(function () {
+    db.reset().
+      use(db3Streamify()).
+      use(db3Mysql({user: 'root', database : 'test'})).
+      use('unpack')
+    done()
+  })
+}
 
 var person = [
   {name: 'God', gender: 'god'},
@@ -21,6 +29,7 @@ var person = [
 describe('Db3', function () {
   before(function (done) {
     async.series([
+      reset,
       function (done) {db.dropTable('test', function () {done()})},
       db.createTable.bind(db, 'test'),
       function (done) {db.dropTable('person', function () {done()})},
@@ -418,14 +427,7 @@ describe('Db3', function () {
     })
   })
   describe('#use', function () {
-    beforeEach(function (done) {
-      db.end(function () {
-        db.reset().
-          use(db3Mysql({user: 'root', database : 'test'})).
-          use('unpack')
-        done()
-      })
-    })
+    beforeEach(reset)
     it('uses plugin', function (done) {
       db.use(function (ctx, next) {
         ctx.data.push(true)

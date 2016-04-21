@@ -220,6 +220,7 @@ _.extend(Db3.prototype, {
     }
     return this.pump({
       i: 0,
+      db: this,
       sql: sql,
       values: values,
       done: done
@@ -245,34 +246,11 @@ _.extend(Db3.prototype, {
   reset: function () {
     this.pipeline = []
     this.use(this.stringify())
-    this.use(this.streamify())
     return this
   },
   stringify: function () {
     return function (ctx, next) {
       ctx.queryString = queryString.stringify(ctx.sql, ctx.values)
-      return next()
-    }
-  },
-  streamify: function (ctx, next) {
-    var self = this
-    return function (ctx, next) {
-      if (_.isFunction(ctx.done))
-        return next()
-      if (ctx.sql) {
-        if (_.contains(['insert', 'update', 'delete'], ctx.sql.name)) {
-          return new stream.Writable({
-            objectMode: true,
-            write: function (data, encoding, next) {
-              if (ctx.sql.name != 'delete')
-                ctx.sql.set = data
-              else
-                ctx.sql.where = data
-              self.query(ctx.sql, next)
-            }
-          })
-        }
-      }
       return next()
     }
   },
