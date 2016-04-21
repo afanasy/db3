@@ -1,7 +1,7 @@
 {
   "name": "db3",
-  "version": "2.2.3",
-  "description": "Node MySQL client",
+  "version": "3.0.0",
+  "description": "Communication framework",
   "scripts": {
     "test": "./node_modules/.bin/mocha"
   },
