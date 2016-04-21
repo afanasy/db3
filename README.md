@@ -22,8 +22,8 @@
  * [Aggregate functions](#aggregate-functions)
  * [SQL query](#sql-query)
  * [Advanced queries](#advanced-queries)
- * [Plugins](#plugins)
  * [Streaming](#streaming)
+ * [Plugins](#plugins)
 
 ## Introduction
 Db3 provides a framework and query format for data exchange. It replaces SQL queries in your code with simple, clean and readable calls. Its aim is to provide shorthand methods for basic and most used data lookup patterns. It may be useful for those who doesn't know or doesn't want to use SQL, but still interested in communicating with the SQL based db. 
@@ -33,8 +33,14 @@ Db3 provides a framework and query format for data exchange. It replaces SQL que
 var db = require('db3')()
 
 db.use(require('db3-streamify')) //optional plugin for streaming
-db.use(require('db3-mysql')({host: 'example.org', user: 'bob', password: 'secret', database : 'test'})) // MySQL plugin, see [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
+db.use(require('db3-mysql')({
+  host: 'example.org',
+  user: 'bob',
+  password: 'secret',
+  database : 'test'
+})) // MySQL plugin
 ```
+For more details on connections options, see [mysql.createPool](https://github.com/felixge/node-mysql#establishing-connections)
 
 ## Disconnecting
 ```javascript
