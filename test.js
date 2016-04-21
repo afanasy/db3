@@ -447,7 +447,7 @@ describe('Db3', function () {
     })
     it('uses plugin for select', function (done) {
       db.use(function (ctx, next) {
-        if (ctx.sql.name == 'select')
+        if (ctx.query.name == 'select')
           ctx.data.push(true)
         next()
       })

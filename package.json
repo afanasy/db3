@@ -23,8 +23,8 @@
     "async": "1.5.0",
     "fast-csv": "0.6.0",
     "mocha": "2.3.3",
-    "db3-mysql": "1.0.0",
-    "db3-streamify": "1.0.0"
+    "db3-mysql": "1.0.1",
+    "db3-streamify": "1.0.1"
   },
   "engines": {
     "node": ">= 0.10"
