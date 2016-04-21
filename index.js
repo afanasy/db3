@@ -1,10 +1,7 @@
 var
   _ = require('underscore'),
   stream = require('stream'),
-  queryString = require('db3-query-string'),
-  format = require('sqlstring').format,
-  escapeId = require('sqlstring').escapeId
-
+  queryString = require('db3-query-string')
 
 module.exports = function () {
   return new Db3()
@@ -36,35 +33,23 @@ _.extend(Db3.prototype, {
       done = field
       field = undefined
     }
-    this.query({name: 'createTable', table: table, field: field}, function (err, data) {
-      data = data || {}
-      data.table = table
-      done(err, data)
-    })
+    return this.query({name: 'createTable', table: table, field: field}, done)
   },
   dropTable: function (table, done) {
-    this.query({name: 'dropTable', table: table}, done)
+    return this.query({name: 'dropTable', table: table}, done)
   },
   truncateTable: function (table, done) {
-    this.query({name: 'truncateTable', table: table}, done)
+    return this.query({name: 'truncateTable', table: table}, done)
   },
   renameTable: function (from, to, done) {
     if (_.isFunction(to)) {
       done = to
       to = undefined
     }
-    if (!to)
-      to = from + +new Date
-    this.query({name: 'renameTable', table: from, to: to}, function (err, data) {
-      if (err)
-        return done(err, null)
-      data = data || {}
-      data.table = to
-      done(err, data)
-    })
+    return this.query({name: 'renameTable', table: from, to: to}, done)
   },
   tableExists: function (table, done) {
-    this.query({name: 'select', table: table, limit: 1}, function (err, data) {
+    return this.query({name: 'select', table: table, limit: 1}, function (err, data) {
       if (!err)
         return done(null, true)
       done(null, false)
@@ -75,19 +60,11 @@ _.extend(Db3.prototype, {
       done = to
       to = undefined
     }
-    if (!to)
-      to = from + +new Date
     var self = this
-    self.query({name: 'createTable', table: to, like: from}, function (err, data) {
+    return self.query({name: 'createTable', table: to, like: from}, function (err, data) {
       if (err)
         return done(err, null)
-      self.query({name: 'insert', table: to, select: from}, function (err, data) {
-        if (err)
-          return done(err, null)
-        data = data || {}
-        data.table = to
-        done(err, data)
-      })
+      self.query({name: 'insert', table: to, select: from}, done)
     })
   },
   insert: function (table, d, done) {
@@ -131,7 +108,7 @@ _.extend(Db3.prototype, {
     if (_.isString(where) || _.isNumber(where) || _.isArray(where))
       where = {id: where}
     var self = this
-    self.query({name: 'select', table: table, where: where}, function (err, data) {
+    return self.query({name: 'select', table: table, where: where}, function (err, data) {
       _.each(data, function (value) {
         delete value.id
         _.extend(value, update)
@@ -160,20 +137,19 @@ _.extend(Db3.prototype, {
     if (_.isNumber(d.where) || _.isString(d.where) || _.isArray(d.where))
       d.where = {id: d.where}
     var unpackField = (_.isNumber(d.field) || _.isString(d.field)) && d.field
-    var query = _.extend(
-      {
-        name: 'select',
-        unpack: function (data) {
-          if (unpackField)
-            data = _.pluck(data, unpackField)
-          if (unpackRow)
-            data = data[0]
-          return data
-        }
-      },
-      _.pick(d, ['field', 'table', 'where', 'orderBy', 'limit'])
-    )
-    return this.query(query, done)
+    function unpack (err, data) {
+      if (err)
+        return done(err)
+      if (unpackField)
+        data = _.pluck(data, unpackField)
+      if (unpackRow)
+        data = data[0]
+      done(err, data)
+    } 
+    var query = _.extend({name: 'select'}, _.pick(d, ['field', 'table', 'where', 'orderBy', 'limit']))
+    if (!done)
+      return this.query(query)
+    return this.query(query, unpack)
   },
   groupBy: function (func, table, cond, field, done) {
     if (_.isFunction(cond) || _.isArray(cond)) {
@@ -185,26 +161,18 @@ _.extend(Db3.prototype, {
       done = field
       field = undefined
     }
-    cond = queryString.where.query(cond)
     field = field || 'id'
-    if (_.isString(field))
+    if (!_.isArray(field))
       field = [field]
-    var lastField = escapeId(field.pop())
-    field = _.map(field, function (d, i) {return escapeId(field)}).join(', ')
-    var query = 'select ' + field
-    if (field.length)
-      query += ', '
-    query += func + '(' + lastField + ') as ' + func + ' from ' + escapeId(table)
-    if (cond)
-      query += ' where ' + cond
-    if (field.length)
-      query += ' group by ' + field
+    var query = {name: 'groupBy', func: func, table: table, where: cond, field: field}
     this.query(query, function (err, data) {
-      if (!field.length) {
+      if (err)
+        return done(err)
+      if (field.length <= 1) {
         var value = data && data[0] && _.values(data[0])[0]
         if (value && !_.contains(['min', 'max'], func))
           value = +value
-        return done(err, value, field)
+        return done(err, value)
       }
       done(err, data)
     })
@@ -223,20 +191,16 @@ _.extend(Db3.prototype, {
     })
   },
   pump: function (ctx) {
-    var self = this
-    function next (err) {
-      var fn = self.pipeline[ctx.i++]
+    var next = function (err) {
+      var fn = this.pipeline[ctx.i++]
       if (err || !fn)
         return ctx.done(err, ctx.data)
       return fn(ctx, next)
-    }
+    }.bind(this)
     return next()
   },
   use: function (fn) {
-    if (_.isString(fn) && _.isFunction(this[fn]))
-      fn = this[fn]()
-    if (_.isFunction(fn))
-      this.pipeline.push(fn)
+    this.pipeline.push(fn)
     return this
   },
   reset: function () {
@@ -247,14 +211,6 @@ _.extend(Db3.prototype, {
   stringify: function () {
     return function (ctx, next) {
       ctx.queryString = queryString.stringify(ctx.sql, ctx.values)
-      return next()
-    }
-  },
-  unpack: function () {
-    return function (ctx, next) {
-      if (!ctx.sql || !ctx.sql.unpack)
-        return next()
-      ctx.data = ctx.sql.unpack(ctx.data)
       return next()
     }
   }

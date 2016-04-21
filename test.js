@@ -11,8 +11,7 @@ function reset (done) {
   db.end(function () {
     db.reset().
       use(db3Streamify()).
-      use(db3Mysql({user: 'root', database : 'test'})).
-      use('unpack')
+      use(db3Mysql({user: 'root', database : 'test'}))
     done()
   })
 }
@@ -34,7 +33,7 @@ describe('Db3', function () {
       db.createTable.bind(db, 'test'),
       function (done) {db.dropTable('person', function () {done()})},
       db.createTable.bind(db, 'person', ['id', 'name', 'gender']),
-      async.eachSeries.bind(async, person, db.insert.bind(db, 'person'))
+      db.insert.bind(db, 'person', person),
     ], done)
   })
   describe('#connect()', function () {
@@ -99,8 +98,9 @@ describe('Db3', function () {
       var table = 'copyTable' + +(new Date)
       db.createTable(table, function () {
         db.insert(table, function () {
-          db.copyTable(table, function (err, data) {
-            db.count(data.table, function (err, count) {
+          var to = table + +new Date
+          db.copyTable(table, to, function (err, data) {
+            db.count(to, function (err, count) {
               done(count <= 0)
             })
           })
@@ -110,11 +110,12 @@ describe('Db3', function () {
   })
   describe('#renameTable()', function () {
     it('renames table', function (done) {
-      var table = 'renameTable' + +(new Date)
+      var table = 'renameTable' + +new Date
       db.createTable(table, function () {
         db.insert(table, function () {
-          db.renameTable(table, function (err, data) {
-            db.count(data.table, function (err, count) {
+          var to = table + +new Date
+          db.renameTable(table, to, function (err, data) {
+            db.count(to, function (err, count) {
               done(count <= 0)
             })
           })

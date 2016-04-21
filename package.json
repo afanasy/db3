@@ -17,8 +17,7 @@
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
     "underscore": "1.8.3",
-    "sqlstring": "1.0.0",
-    "db3-query-string": "1.0.5"
+    "db3-query-string": "1.0.6"
   },
   "devDependencies": {
     "async": "1.5.0",
