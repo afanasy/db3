@@ -1,15 +1,17 @@
 var
   _ = require('underscore'),
   stream = require('stream'),
-  mysql = require('mysql'),
   shortid = require('shortid'),
-  queryString = require('db3-query-string')
+  queryString = require('db3-query-string'),
+  format = require('sqlstring').format,
+  escapeId = require('sqlstring').escapeId
 
-module.exports = function (d) {
-  return new Db3(d)
+
+module.exports = function () {
+  return new Db3()
 }
 
-function Db3 (d) {
+function Db3 () {
   var self = this
   _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
     self[func] = function (table, cond, field, done) {
@@ -17,20 +19,14 @@ function Db3 (d) {
     }
   })
   this.reset()
-  if (d)
-    this.connect(d)
   return this
 }
 
 _.extend(Db3.prototype, {
-  format: mysql.format,
   queryString: queryString,
-  connect: function (d) {
-    this.db = mysql.createPool(d)
-    return this
-  },
   end: function (done) {
-    return this.db.end(done)
+    this.query('dbEnd', done)
+    return this
   },
   createTable: function (table, field, done) {
     if (_.isFunction(table)) {
@@ -197,12 +193,12 @@ _.extend(Db3.prototype, {
     field = field || 'id'
     if (_.isString(field))
       field = [field]
-    var lastField = mysql.escapeId(field.pop())
-    field = _.map(field, function (d, i) {return mysql.escapeId(field)}).join(', ')
+    var lastField = escapeId(field.pop())
+    field = _.map(field, function (d, i) {return escapeId(field)}).join(', ')
     var query = 'select ' + field
     if (field.length)
       query += ', '
-    query += func + '(' + lastField + ') as ' + func + ' from ' + mysql.escapeId(table)
+    query += func + '(' + lastField + ') as ' + func + ' from ' + escapeId(table)
     if (cond)
       query += ' where ' + cond
     if (field.length)
@@ -232,29 +228,25 @@ _.extend(Db3.prototype, {
   pump: function (ctx) {
     var self = this
     function next (err) {
-      var use = self.pipeline[ctx.i++]
-      if (err || !use || !use.fn)
+      var fn = self.pipeline[ctx.i++]
+      if (err || !fn)
         return ctx.done(err, ctx.data)
-      if (self.match(use.filter, ctx.sql))
-        return use.fn(ctx, next)
-      return next()
+      return fn(ctx, next)
     }
     return next()
   },
-  match: function (filter, sql) {
-    if (filter === true)
-      return true
-    return filter == sql.name
-  },
-  use: function (filter, fn) {
-    this.pipeline.push({filter: filter, fn: fn})
+  use: function (fn) {
+    if (_.isString(fn) && _.isFunction(this[fn]))
+      fn = this[fn]()
+    if (_.isFunction(fn))
+      this.pipeline.push(fn)
+    return this
   },
   reset: function () {
     this.pipeline = []
-    this.use(true, this.stringify())
-    this.use(true, this.streamify())
-    this.use(true, this.mysql())
-    this.use(true, this.unpack())
+    this.use(this.stringify())
+    this.use(this.streamify())
+    return this
   },
   stringify: function () {
     return function (ctx, next) {
@@ -282,30 +274,6 @@ _.extend(Db3.prototype, {
         }
       }
       return next()
-    }
-  },
-  mysql: function () {
-    var self = this
-    return function (ctx, next) {
-      if (!_.isFunction(ctx.done)) {
-        return self.db.query(ctx.queryString).stream().pipe(new stream.Transform({
-          objectMode: true,
-          transform: function (data, encoding, next) {
-            //ctx = _.clone(ctx)
-            //ctx.data = data
-            //ctx.done = function (err, data) {
-              this.push(data)
-              next()
-            //}.bind(this)
-            //self.pump(ctx)
-          }
-        }))
-      }
-      self.db.query(ctx.queryString, function (err, data, fields) {
-        ctx.data = data
-        ctx.fields = fields
-        next(err)
-      })
     }
   },
   unpack: function () {

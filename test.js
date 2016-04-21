@@ -2,8 +2,12 @@ var
   _ = require('underscore'),
   async = require('async'),
   csv = require('fast-csv'),
-  db3 = require('./'),
-  db = db3({user: 'root', database : 'test'})
+  db3Mysql = require('db3-mysql'),
+  db3 = require('./')
+
+var db = db3().
+  use(db3Mysql({user: 'root', database : 'test'})).
+  use('unpack')
 
 var person = [
   {name: 'God', gender: 'god'},
@@ -26,15 +30,16 @@ describe('Db3', function () {
   })
   describe('#connect()', function () {
     it('connects to the db', function (done) {
-      var db = db3().connect({user: 'root', database : 'test'})
-      db.query('select 1', function (err, data) {
-        done(data.length !== 1)
-      })
+      db3().
+        use(db3Mysql({user: 'root', database : 'test'})).
+        query('select 1', function (err, data) {
+          done(data.length !== 1)
+        })
     })
   })
   describe('#end()', function () {
     it('disconnects from db', function (done) {
-      db3().connect({user: 'root', database : 'test'}).end(done)
+      db3().use(db3Mysql({user: 'root', database : 'test'})).end(done)
     })
   })
   describe('#createTable()', function () {
@@ -413,9 +418,16 @@ describe('Db3', function () {
     })
   })
   describe('#use', function () {
-    beforeEach(function () {db.reset()})
-    it('uses mw', function (done) {
-      db.use(true, function (ctx, next) {
+    beforeEach(function (done) {
+      db.end(function () {
+        db.reset().
+          use(db3Mysql({user: 'root', database : 'test'})).
+          use('unpack')
+        done()
+      })
+    })
+    it('uses plugin', function (done) {
+      db.use(function (ctx, next) {
         ctx.data.push(true)
         next()
       })
@@ -423,9 +435,10 @@ describe('Db3', function () {
         done(_.last(data) !== true)
       })
     })
-    it('matching string filter', function (done) {
-      db.use('select', function (ctx, next) {
-        ctx.data.push(true)
+    it('uses plugin for select', function (done) {
+      db.use(function (ctx, next) {
+        if (ctx.sql.name == 'select')
+          ctx.data.push(true)
         next()
       })
       db.createTable(+new Date, function () {
