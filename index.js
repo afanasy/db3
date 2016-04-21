@@ -1,6 +1,5 @@
 var
   _ = require('underscore'),
-  stream = require('stream'),
   queryString = require('db3-query-string')
 
 module.exports = function () {
