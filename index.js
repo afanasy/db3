@@ -1,7 +1,6 @@
 var
   _ = require('underscore'),
   stream = require('stream'),
-  shortid = require('shortid'),
   queryString = require('db3-query-string'),
   format = require('sqlstring').format,
   escapeId = require('sqlstring').escapeId
@@ -31,7 +30,7 @@ _.extend(Db3.prototype, {
   createTable: function (table, field, done) {
     if (_.isFunction(table)) {
       field = table
-      table = 'table' + shortid.generate()
+      table = 'table' + +new Date
     }
     if (_.isFunction(field)) {
       done = field
@@ -55,7 +54,7 @@ _.extend(Db3.prototype, {
       to = undefined
     }
     if (!to)
-      to = from + shortid.generate()
+      to = from + +new Date
     this.query({name: 'renameTable', table: from, to: to}, function (err, data) {
       if (err)
         return done(err, null)
@@ -77,7 +76,7 @@ _.extend(Db3.prototype, {
       to = undefined
     }
     if (!to)
-      to = from + shortid.generate()
+      to = from + +new Date
     var self = this
     self.query({name: 'createTable', table: to, like: from}, function (err, data) {
       if (err)
@@ -130,7 +129,7 @@ _.extend(Db3.prototype, {
       d = undefined
     }
     var self = this
-    var temporaryTable = 'duplicate' + shortid.generate()
+    var temporaryTable = 'duplicate' + +new Date
     self.query({name: 'createTable', table: temporaryTable, like: table}, function () {
       self.query({name: 'insert', table: temporaryTable, select: {table: table, where: {id: id}}}, function () {
         self.update(temporaryTable, id, d, function () {
