@@ -103,7 +103,7 @@ _.extend(Db3.prototype, {
     return this.query({name: 'update', table: table, set: d, where: cond}, done)
   },
   delete: function (table, cond, done) {
-    if (_.isString(cond) || _.isNumber(cond))
+    if (_.isString(cond) || _.isNumber(cond) || _.isArray(cond))
       cond = {id: cond}
     return this.query({name: 'delete', table: table, where: cond}, done)
   },
@@ -123,23 +123,20 @@ _.extend(Db3.prototype, {
       field = [field]
     return this.query({name: 'insert', table: table, set: d, update: (field && _.pick(d, field)) || d}, done)
   },
-  duplicate: function (table, id, d, done) {
-    if (_.isFunction(d)) {
-      done = d
-      d = undefined
+  duplicate: function (table, where, update, done) {
+    if (_.isFunction(update)) {
+      done = update
+      update = undefined
     }
+    if (_.isString(where) || _.isNumber(where) || _.isArray(where))
+      where = {id: where}
     var self = this
-    var temporaryTable = 'duplicate' + +new Date
-    self.query({name: 'createTable', table: temporaryTable, like: table}, function () {
-      self.query({name: 'insert', table: temporaryTable, select: {table: table, where: {id: id}}}, function () {
-        self.update(temporaryTable, id, d, function () {
-          self.query({name: 'alterTable', table: temporaryTable, drop: 'id'}, function () {
-            self.query('insert ?? select null, ??.* from ??', [table, temporaryTable, temporaryTable], function (err, data) {
-              self.dropTable(temporaryTable, function () {done(err, data)})
-            })
-          })
-        })
+    self.query({name: 'select', table: table, where: where}, function (err, data) {
+      _.each(data, function (value) {
+        delete value.id
+        _.extend(value, update)
       })
+      self.insert(table, data, done)
     })
   },
   select: function (d, cond, field, done) {

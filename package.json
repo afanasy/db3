@@ -18,7 +18,7 @@
   "dependencies": {
     "underscore": "1.8.3",
     "sqlstring": "1.0.0",
-    "db3-query-string": "1.0.4"
+    "db3-query-string": "1.0.5"
   },
   "devDependencies": {
     "async": "1.5.0",

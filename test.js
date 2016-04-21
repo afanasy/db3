@@ -135,6 +135,13 @@ describe('Db3', function () {
         })
       })
     })
+    it('inserts multiple items at once', function (done) {
+      db.insert('test', [{name: 'test'}, {name: 'test'}], function (err, data) {
+        db.select('test', {id: [data.insertId, data.insertId + 1]}, 'name', function (err, data) {
+          done((data[0] != 'test') || (data[1] != 'test'))
+        })
+      })
+    })    
     it('creates writeable insert stream', function (done) {
       var table = 'person' + +(new Date)
       db.createTable(table, ['id', 'name', 'gender'], function () {
