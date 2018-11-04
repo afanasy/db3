@@ -22,10 +22,9 @@
     "db3-query-string": "1.0.3"
   },
   "devDependencies": {
-    "chai": "*",
-    "mocha": "*",
-    "async": "*",
-    "fast-csv": "*"
+    "mocha": "5.2.0",
+    "async": "2.6.1",
+    "fast-csv": "2.4.1"
   },
   "engines": {
     "node": ">= 0.10"
