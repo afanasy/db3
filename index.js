@@ -1,9 +1,8 @@
-var
-  _ = require('underscore'),
-  stream = require('stream'),
-  mysql = require('mysql'),
-  shortid = require('shortid'),
-  queryString = require('db3-query-string')
+var _ = require('underscore')
+var stream = require('stream')
+var mysql = require('mysql')
+var shortid = require('shortid')
+var queryString = require('db3-query-string')
 
 exports.connect = function (d) {
   return new Db3(mysql.createPool(d))

@@ -3,7 +3,7 @@
   "version": "2.2.3",
   "description": "Node MySQL client",
   "scripts": {
-    "test": "./node_modules/.bin/mocha"
+    "test": "./node_modules/.bin/mocha --exit"
   },
   "repository": {
     "type": "git",
@@ -16,7 +16,7 @@
   },
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
-    "mysql": "2.9.0",
+    "mysql": "2.16.0",
     "underscore": "1.8.3",
     "shortid": "2.2.2",
     "db3-query-string": "1.0.3"
