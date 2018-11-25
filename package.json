@@ -19,7 +19,7 @@
     "mysql": "2.16.0",
     "underscore": "1.8.3",
     "shortid": "2.2.13",
-    "db3-query-string": "1.0.3"
+    "db3-query-string": "1.0.7"
   },
   "devDependencies": {
     "mocha": "5.2.0",
