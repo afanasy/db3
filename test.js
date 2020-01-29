@@ -298,6 +298,11 @@ describe('Db3', function () {
         done(_.size(data) != _.size(person))
       })
     })
+    it('does not fail with select error', function (done) {
+      db.select('', 1, function (err, data) {
+        done()
+      })
+    })
   })
   describe('#groupBy()', function () {
     var groupBy = {

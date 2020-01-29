@@ -186,7 +186,7 @@ _.extend(Db3.prototype, {
       if (unpackField)
         data = _.pluck(data, unpackField)
       if (unpackRow)
-        data = data[0]
+        data = _.first(data) //_.first does not fail when data is undefined
       return data
     }
     if (!done)
