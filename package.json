@@ -16,15 +16,12 @@
   },
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
+    "db3-query-string": "1.0.7",
     "mysql": "2.16.0",
-    "underscore": "1.8.3",
-    "shortid": "2.2.13",
-    "db3-query-string": "1.0.7"
+    "shortid": "2.2.13"
   },
   "devDependencies": {
-    "mocha": "5.2.0",
-    "async": "2.6.1",
-    "fast-csv": "2.4.1"
+    "mocha": "5.2.0"
   },
   "engines": {
     "node": ">= 4.0"

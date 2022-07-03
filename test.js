@@ -1,6 +1,3 @@
-var _ = require('underscore')
-var async = require('async')
-var csv = require('fast-csv')
 var db3 = require('./')
 var db = db3.connect({user: 'root', database : 'test'})
 
@@ -17,11 +14,18 @@ describe('Db3', function () {
   before(function (done) {
     db.dropTable('test', function () {
       db.dropTable('person', function () {
-        async.series([
-          db.createTable.bind(db, 'test'),
-          db.createTable.bind(db, 'person', ['id', 'name', 'gender']),
-          async.eachSeries.bind(async, person, db.insert.bind(db, 'person'))
-        ], done)
+        db.createTable('test', () => {
+          db.createTable('person', ['id', 'name', 'gender'], () => {
+            function insert (i) {
+              if (!person[i])
+                return done()
+              db.insert('person', person[i], () => {
+                insert(i + 1)
+              })
+            }
+            insert(0)
+          })
+        })
       })
     })
   })
@@ -29,7 +33,7 @@ describe('Db3', function () {
     it('connects to the db', function (done) {
       var db = db3.connect({user: 'root', database : 'test'})
       db.query('select 1', function (err, data) {
-        done(_.size(data) != 1)
+        done(data.length != 1)
       })
     })
   })
@@ -141,7 +145,7 @@ describe('Db3', function () {
     it('updates row', function (done) {
       db.insert('test', function (err, data) {
         var id = data.insertId
-        db.update('test', id, {name: 'test'}, function (err, data) {
+        db.update('test', id, {name: 'test'}, function () {
           db.select('test', id, function (err, data) {
             done(data.name != 'test')
           })
@@ -153,7 +157,7 @@ describe('Db3', function () {
         var id = [data.insertId]
         db.insert('test', function (err, data) {
           id.push(data.insertId)
-          db.update('test', id, {name: 'test'}, function (err, data) {
+          db.update('test', id, {name: 'test'}, function () {
             db.select('test', id, function (err, data) {
               done((data.length != id.length) || (data[0].name != 'test') || (data[1].name != 'test'))
             })
@@ -166,9 +170,9 @@ describe('Db3', function () {
     it('deletes row', function (done) {
       db.insert('test', function (err, data) {
         var id = data.insertId
-        db.delete('test', id, function (err, data) {
+        db.delete('test', id, function () {
           db.select('test', id, function (err, data) {
-            done(!_.isUndefined(data))
+            done(data)
           })
         })
       })
@@ -195,7 +199,7 @@ describe('Db3', function () {
     it('updates an existing row', function (done) {
       db.save('test', function (err, data) {
         var item = {id: data.insertId, name: 'test'}
-        db.save('test', item, function (err, data) {
+        db.save('test', item, function () {
           db.select('test', item.id, function (err, data) {
             done(data.name != item.name)
           })
@@ -207,7 +211,7 @@ describe('Db3', function () {
       db.save('test', item, function (err, data) {
         item.id = data.insertId
         item.name = 'tset'
-        db.save('test', item, 'id', function (err, data) {
+        db.save('test', item, 'id', function () {
           db.select('test', item.id, function (err, data) {
             done(!data.name || (data.name == item.name))
           })
@@ -219,7 +223,7 @@ describe('Db3', function () {
       db.createTable(table, ['id', 'name', 'gender'], function () {
         db.select('person').pipe(db.save(table)).on('finish', function () {
           db.count(table, function (err, count) {
-            done(count != _.size(person))
+            done(count != person.length)
           })
         })
       })
@@ -247,22 +251,22 @@ describe('Db3', function () {
     })
     it('selects an item from table using "in ()"', function (done) {
       db.select('person', {id: [1, 2]}, function (err, data) {
-        done(_.size(data) != 2)
+        done(data.length != 2)
       })
     })
     it('selects an item from table using "between"', function (done) {
       db.select('person', {id: {from: 2, to: 4}}, function (err, data) {
-        done(_.size(data) != 3)
+        done(data.length != 3)
       })
     })
     it('selects an item from table using ">="', function (done) {
       db.select('person', {id: {from: 2}}, function (err, data) {
-        done(_.size(data) != 5)
+        done(data.length != 5)
       })
     })
     it('selects an item from table using "<="', function (done) {
       db.select('person', {id: {to: 2}}, function (err, data) {
-        done(_.size(data) != 2)
+        done(data.length != 2)
       })
     })
     it('selects an item from table using shorthand id syntax', function (done) {
@@ -278,7 +282,7 @@ describe('Db3', function () {
     it('creates readable select stream', function (done) {
       var count = 0
       db.select('person').
-        on('data', function (err, data) {count++}).
+        on('data', () => count++).
         on('end', function () {
           done(count <= 0)
         })
@@ -290,16 +294,16 @@ describe('Db3', function () {
     })
     it('selects from object with limit', function (done) {
       db.select({table: 'person', limit: 10}, function (err, data) {
-        done(_.size(data) != _.size(person))
+        done(data.length != person.length)
       })
     })
     it('selects with empty condition', function (done) {
       db.select('person', {}, function (err, data) {
-        done(_.size(data) != _.size(person))
+        done(data.length != person.length)
       })
     })
     it('does not fail with select error', function (done) {
-      db.select('', 1, function (err, data) {
+      db.select('', 1, () => {
         done()
       })
     })
@@ -311,13 +315,13 @@ describe('Db3', function () {
         fullTable: person.length,
         filtered: 1,
         grouped: {gender: 'female', count: 1},
-        filteredAndGrouped: {gender: 'male', count: 4}
+        filteredGrouped: {gender: 'male', count: 1}
       },
       min: {
         fullTable: 1,
         filtered: 2,
         grouped: {gender: 'female', min: 3},
-        filteredAndGrouped: {gender: 'male', min: 4}
+        filteredGrouped: {gender: 'male', min: 4}
       },
       max: {
         fullTable: person.length,
@@ -338,7 +342,7 @@ describe('Db3', function () {
         filteredGrouped: {gender: 'male', sum: 4}
       }
     }
-    _.each(['count', 'min', 'max', 'avg', 'sum'], function (func) {
+    ;['count', 'min', 'max', 'avg', 'sum'].forEach(func => {
       var name = func + '(' + (groupBy[func].field || 'id') + ')'
       it('selects ' + name  + ' from table', function (done) {
         db[func]('person', function (err, data) {
@@ -352,12 +356,14 @@ describe('Db3', function () {
       })
       it('selects ' + name + ' from table grouped by field', function (done) {
         db[func]('person', ['gender', 'id'], function (err, data) {
-          done(!_.findWhere(data, groupBy[func].grouped))
+          // done(!_.findWhere(data, groupBy[func].grouped))
+          done(!data.find(d => !Object.keys(groupBy[func].grouped).find(key => groupBy[func].grouped[key] != d[key])))
         })
       })
       it('selects ' + name + ' from table filtered by condition and grouped by field', function (done) {
         db[func]('person', {name: 'Cain'}, ['gender', 'id'], function (err, data) {
-          done(!_.findWhere(data, groupBy[func].filteredGrouped))
+          // done(!_.findWhere(data, groupBy[func].filteredGrouped))
+          done(!data.find(d => !Object.keys(groupBy[func].filteredGrouped).find(key => groupBy[func].filteredGrouped[key] != d[key])))
         })
       })
     })
@@ -365,39 +371,16 @@ describe('Db3', function () {
   describe('#query()', function () {
     it('returns summary data grouped by name', function (done) {
       db.query('select ??, count(*) from ?? group by ??', ['name', 'test', 'name'], function (err, data) {
-        done(_.size(data) <= 0)
+        done(!data.length)
       })
     })
     it('returns readable stream if no callback provided', function (done) {
       var count = 0
       db.query('select * from ??', 'person').
-        on('data', function (err, data) {count++}).
+        on('data', () => count++).
         on('end', function () {
-          done(count != _.size(person))
+          done(count != person.length)
         })
-    })
-  })
-  describe('#csv()', function () {
-    it('streams select to csv', function (done) {
-      var stream = csv.format({headers: true})
-      var count = 0
-      stream.on('data', function (err, data) {count++})
-      stream.on('finish', function () {
-        done(count <= 0)
-      })
-      db.select('person').pipe(stream)
-    })
-    it('streams csv to insert', function (done) {
-      var table = 'csv' + +(new Date)
-      db.createTable(table, function () {
-        var stream = db.insert(table)
-        stream.on('finish', function () {
-          db.count(table, function (err, count) {
-            done(count <= 0)
-          })
-        })
-        csv.fromString("name\ncsv1\ncsv2\n", {headers: true}).pipe(stream)
-      })
     })
   })
 })
