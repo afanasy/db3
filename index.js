@@ -1,6 +1,6 @@
+var crypto = require('crypto')
 var stream = require('stream')
 var mysql = require('mysql')
-var shortid = require('shortid')
 var queryString = require('db3-query-string')
 
 function tagTester (name) {
@@ -15,9 +15,16 @@ var isFunction = tagTester('Function')
 var isNumber = tagTester('Number')
 var isString = tagTester('String')
 
-exports.connect = function (d) {
-  return new Db3(mysql.createPool(d))
+function randomSuffix (prefix, suffix, done) {
+  if (!suffix)
+    return done(null, prefix)
+  crypto.randomBytes(8, (err, data) => {
+    done(null, prefix + data.toString('hex'))
+  })
 }
+
+module.exports.connect = d =>
+  new Db3(mysql.createPool(d))
 
 var Db3 = function (d) {
   this.db = d
@@ -34,18 +41,22 @@ Object.assign(Db3.prototype, {
     return this.db.end(done)
   },
   createTable: function (table, field, done) {
+    var suffix
     if (isFunction(table)) {
       field = table
-      table = 'table' + shortid.generate()
+      table = 'table'
+      suffix = true
     }
     if (isFunction(field)) {
       done = field
       field = undefined
     }
-    this.query({name: 'createTable', table: table, field: field}, (err, data) => {
-      data = data || {}
-      data.table = table
-      done(err, data)
+    randomSuffix(table, suffix, (err, table) => {
+      this.query({name: 'createTable', table: table, field: field}, (err, data) => {
+        data = data || {}
+        data.table = table
+        done(err, data)
+      })
     })
   },
   dropTable: function (table, done) {
@@ -55,18 +66,23 @@ Object.assign(Db3.prototype, {
     this.query({name: 'truncateTable', table: table}, done)
   },
   renameTable: function (from, to, done) {
+    var suffix
     if (isFunction(to)) {
       done = to
       to = undefined
     }
-    if (!to)
-      to = from + shortid.generate()
-    this.query({name: 'renameTable', table: from, to: to}, (err, data) => {
-      if (err)
-        return done(err, null)
-      data = data || {}
-      data.table = to
-      done(err, data)
+    if (!to) {
+      to = from
+      suffix = true
+    }
+    randomSuffix(to, suffix, (err, to) => {
+      this.query({name: 'renameTable', table: from, to: to}, (err, data) => {
+        if (err)
+          return done(err, null)
+        data = data || {}
+        data.table = to
+        done(err, data)
+      })
     })
   },
   tableExists: function (table, done) {
@@ -77,22 +93,26 @@ Object.assign(Db3.prototype, {
     })
   },
   copyTable: function (from, to, done) {
+    var suffix
     if (isFunction(to)) {
       done = to
       to = undefined
     }
-    if (!to)
-      to = from + shortid.generate()
-    var self = this
-    self.query({name: 'createTable', table: to, like: from}, err => {
-      if (err)
-        return done(err, null)
-      self.query({name: 'insert', table: to, select: from}, (err, data) => {
+    if (!to) {
+      to = from
+      suffix = true
+    }
+    randomSuffix(to, suffix, (err, to) => {
+      this.query({name: 'createTable', table: to, like: from}, err => {
         if (err)
           return done(err, null)
-        data = data || {}
-        data.table = to
-        done(err, data)
+        this.query({name: 'insert', table: to, select: from}, (err, data) => {
+          if (err)
+            return done(err, null)
+          data = data || {}
+          data.table = to
+          done(err, data)
+        })
       })
     })
   },
@@ -157,15 +177,16 @@ Object.assign(Db3.prototype, {
       done = d
       d = undefined
     }
-    var temporaryTable = 'duplicate' + shortid.generate()
-    this.query({name: 'createTable', table: temporaryTable, like: table}, () => {
-      this.query({name: 'insert', table: temporaryTable, select: {table: table, where: {id: id}}}, () => {
-        this.update(temporaryTable, id, d, () => {
-          this.query({name: 'alterTable', table: temporaryTable, drop: 'id'}, () => {
-            this.query('insert ?? select null, ??.* from ??', [table, temporaryTable, temporaryTable], (err, data) => {
-              this.dropTable(temporaryTable, () =>
-                done(err, data)
-              )
+    randomSuffix('duplicate', true, (err, temporaryTable) => {
+      this.query({name: 'createTable', table: temporaryTable, like: table}, () => {
+        this.query({name: 'insert', table: temporaryTable, select: {table: table, where: {id: id}}}, () => {
+          this.update(temporaryTable, id, d, () => {
+            this.query({name: 'alterTable', table: temporaryTable, drop: 'id'}, () => {
+              this.query('insert ?? select null, ??.* from ??', [table, temporaryTable, temporaryTable], (err, data) => {
+                this.dropTable(temporaryTable, () =>
+                  done(err, data)
+                )
+              })
             })
           })
         })
@@ -242,7 +263,7 @@ Object.assign(Db3.prototype, {
       query += ' group by ' + field
     this.query(query, (err, data) => {
       if (!field.length) {
-        var value = data && data[0] && Object.values(data[0])[0]
+        var value = data && data[0] && data[0][Object.keys(data[0])[0]]
         if (value && (func != 'min') && (func != 'max'))
           value = +value
         return done(err, value, field)

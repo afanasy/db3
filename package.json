@@ -17,8 +17,7 @@
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
     "db3-query-string": "1.0.7",
-    "mysql": "2.16.0",
-    "shortid": "2.2.13"
+    "mysql": "2.16.0"
   },
   "devDependencies": {
     "mocha": "5.2.0"

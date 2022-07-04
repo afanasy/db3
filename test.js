@@ -42,12 +42,19 @@ describe('Db3', function () {
       db3.connect({user: 'root', database : 'test'}).end(done)
     })
   })
-  describe('#createTable()', function () {
-    it('creates table', function (done) {
-      var table = 'createTable' + +(new Date)
-      db.createTable(table, function () {
-        db.tableExists(table, function (err, exists) {
-          done(exists != true)
+  describe('#createTable()', () => {
+    it('creates table', done => {
+      db.createTable((err, data) => {
+        db.tableExists(data.table, (err, exists) => {
+          done(!exists)
+        })
+      })
+    })
+    it('creates table with table name', done => {
+      var table = 'createTable' + Date.now()
+      db.createTable(table, () => {
+        db.tableExists(table, (err, exists) => {
+          done(!exists)
         })
       })
     })
@@ -71,7 +78,6 @@ describe('Db3', function () {
       })
     })
   })
-
   describe('#truncateTable()', function () {
     it('truncates table', function (done) {
       var table = 'truncateTable' + +(new Date)
@@ -86,28 +92,38 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#copyTable()', function () {
-    it('copies table and all its data to other table', function (done) {
-      var table = 'copyTable' + +(new Date)
-      db.createTable(table, function () {
-        db.insert(table, function () {
-          db.copyTable(table, function (err, data) {
-            db.count(data.table, function (err, count) {
-              done(count <= 0)
+  describe('#copyTable()', () => {
+    it('copies table and all its data to other table', done => {
+      db.createTable((err, data) => {
+        db.insert(data.table, () => {
+          db.copyTable(data.table, (err, data) => {
+            db.count(data.table, (err, count) => {
+              done(!count)
             })
           })
         })
       })
     })
   })
-  describe('#renameTable()', function () {
-    it('renames table', function (done) {
-      var table = 'renameTable' + +(new Date)
-      db.createTable(table, function () {
-        db.insert(table, function () {
-          db.renameTable(table, function (err, data) {
-            db.count(data.table, function (err, count) {
-              done(count <= 0)
+  describe('#renameTable()', () => {
+    it('renames table', done => {
+      db.createTable((err, data) => {
+        db.insert(data.table, () => {
+          db.renameTable(data.table, (err, data) => {
+            db.count(data.table, (err, count) => {
+              done(!count)
+            })
+          })
+        })
+      })
+    })
+    it('renames table with table name', done => {
+      var table = 'renameTable' + Date.now()
+      db.createTable(table, () => {
+        db.insert(table, () => {
+          db.renameTable(table, (err, data) => {
+            db.count(data.table, (err, count) => {
+              done(!count)
             })
           })
         })
@@ -229,14 +245,14 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#duplicate()', function () {
-    it('duplicates row', function (done) {
-      db.insert('test', function (err, data) {
+  describe('#duplicate()', () => {
+    it('duplicates row', done => {
+      db.insert('test', (err, data) => {
         var id = data.insertId
-        db.duplicate('test', id, function (err, data) {
+        db.duplicate('test', id, (err, data) => {
           if (data.insertId == id)
             return done(true)
-          db.count('test', data.insertId, function (err, data) {
+          db.count('test', data.insertId, (err, data) => {
             done(data != 1)
           })
         })
