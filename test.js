@@ -10,25 +10,69 @@ var person = [
   {name: 'Seth', gender: 'male'}
 ]
 
-describe('Db3', () => {
-  before(done => {
-    db.dropTable('test', () => {
-      db.dropTable('person', () => {
-        db.createTable('test', () => {
-          db.createTable('person', ['id', 'name', 'gender'], () => {
-            function insert (i) {
-              if (!person[i])
-                return done()
-              db.insert('person', person[i], () => {
-                insert(i + 1)
-              })
-            }
-            insert(0)
+var mocha = {
+  test: [],
+  depth: 0,
+  describe: (title, done) => {
+    mocha.test.push({type: 'describe', title, depth: mocha.depth})
+    mocha.depth++
+    done()
+    mocha.depth--
+  },
+  it: (title, run) => {
+    mocha.test.push({type: 'test', title, depth: mocha.depth, run}) 
+  },
+  run: () => {
+    !function next (i) {
+      var test = mocha.test[i]
+      if (!i)
+        start = Date.now()
+      if (!test) {
+        console.log(pass + ' passing, ' + fail + ' failed (' + (Date.now() - start) + 'ms)')
+        process.exit(fail? 1: 0)
+        return
+      }
+      var indent = '  '.repeat(test.depth)
+      if (test.type == 'describe') {
+        console.log(indent, test.title)
+        return next(i + 1)
+      }
+      test.run(err => {
+        if (err)
+          fail++
+        else
+          pass++
+        console.log(indent, (err? '✖': '✓') + ' ' + test.title)
+        next(i + 1)
+      })
+    }(0)
+    var start
+    var pass = 0
+    var fail = 0
+  }
+}
+
+var describe = mocha.describe
+var it = mocha.it
+
+db.dropTable('test', () => {
+  db.dropTable('person', () => {
+    db.createTable('test', () => {
+      db.createTable('person', ['id', 'name', 'gender'], () => {
+        function insert (i) {
+          if (!person[i])
+            return mocha.run()
+          db.insert('person', person[i], () => {
+            insert(i + 1)
           })
-        })
+        }
+        insert(0)
       })
     })
   })
+})
+
+describe('Db3', () => {
   describe('#connect()', () => {
     it('connected to the db', done => {
       db.query('select 1', (err, data) => {
