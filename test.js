@@ -10,10 +10,10 @@ var person = [
   {name: 'Seth', gender: 'male'}
 ]
 
-describe('Db3', function () {
-  before(function (done) {
-    db.dropTable('test', function () {
-      db.dropTable('person', function () {
+describe('Db3', () => {
+  before(done => {
+    db.dropTable('test', () => {
+      db.dropTable('person', () => {
         db.createTable('test', () => {
           db.createTable('person', ['id', 'name', 'gender'], () => {
             function insert (i) {
@@ -29,16 +29,15 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#connect()', function () {
-    it('connects to the db', function (done) {
-      var db = db3.connect({user: 'root', database : 'test'})
-      db.query('select 1', function (err, data) {
+  describe('#connect()', () => {
+    it('connected to the db', done => {
+      db.query('select 1', (err, data) => {
         done(data.length != 1)
       })
     })
   })
-  describe('#end()', function () {
-    it('disconnects from db', function (done) {
+  describe('#end()', () => {
+    it('disconnects from db', done => {
       db3.connect({user: 'root', database : 'test'}).end(done)
     })
   })
@@ -59,33 +58,33 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#dropTable()', function () {
-    it('drops table', function (done) {
+  describe('#dropTable()', () => {
+    it('drops table', done => {
       var table = 'dropTable' + +(new Date)
-      db.createTable(table, function () {
-        db.dropTable(table, function () {
-          db.tableExists(table, function (err, exists) {
-            done(exists == true)
+      db.createTable(table, () => {
+        db.dropTable(table, () => {
+          db.tableExists(table, (err, exists) => {
+            done(exists)
           })
         })
       })
     })
   })
-  describe('#tableExists()', function () {
-    it('checks if table exists', function (done) {
-      db.tableExists('tableExists' + +(new Date), function (err, exists) {
-        done(exists == true)
+  describe('#tableExists()', () => {
+    it('checks if table exists', done => {
+      db.tableExists('tableExists' + +(new Date), (err, exists) => {
+        done(exists)
       })
     })
   })
-  describe('#truncateTable()', function () {
-    it('truncates table', function (done) {
+  describe('#truncateTable()', () => {
+    it('truncates table', done => {
       var table = 'truncateTable' + +(new Date)
-      db.createTable(table, function () {
-        db.insert(table, function () {
-          db.truncateTable(table, function () {
-            db.count(table, function (err, count) {
-              done(count != 0)
+      db.createTable(table, () => {
+        db.insert(table, () => {
+          db.truncateTable(table, () => {
+            db.count(table, (err, count) => {
+              done(count)
             })
           })
         })
@@ -130,26 +129,26 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#insert()', function () {
-    it('inserts empty item', function (done) {
-      db.insert('test', function (err, data) {
-        done(data.insertId <= 0)
+  describe('#insert()', () => {
+    it('inserts empty item', done => {
+      db.insert('test', (err, data) => {
+        done(!data.insertId)
       })
     })
-    it('inserts item', function (done) {
-      db.insert('test', {name: 'test'}, function (err, data) {
-        db.select('test', data.insertId, function (err, data) {
+    it('inserts item', done => {
+      db.insert('test', {name: 'test'}, (err, data) => {
+        db.select('test', data.insertId, (err, data) => {
           done(data.name != 'test')
         })
       })
     })
-    it('creates writeable insert stream', function (done) {
+    it('creates writeable insert stream', done => {
       var table = 'person' + +(new Date)
-      db.createTable(table, ['id', 'name', 'gender'], function () {
+      db.createTable(table, ['id', 'name', 'gender'], () => {
         var stream = db.insert(table)
-        stream.on('finish', function () {
-          db.count(table, function (err, count) {
-            done(count <= 0)
+        stream.on('finish', () => {
+          db.count(table, (err, count) => {
+            done(!count)
           })
         })
         stream.write({})
@@ -157,24 +156,24 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#update()', function () {
-    it('updates row', function (done) {
-      db.insert('test', function (err, data) {
+  describe('#update()', () => {
+    it('updates row', done => {
+      db.insert('test', (err, data) => {
         var id = data.insertId
-        db.update('test', id, {name: 'test'}, function () {
-          db.select('test', id, function (err, data) {
+        db.update('test', id, {name: 'test'}, () => {
+          db.select('test', id, (err, data) => {
             done(data.name != 'test')
           })
         })
       })
     })
-    it('updates rows with array condition', function (done) {
-      db.insert('test', function (err, data) {
+    it('updates rows with array condition', done => {
+      db.insert('test', (err, data) => {
         var id = [data.insertId]
-        db.insert('test', function (err, data) {
+        db.insert('test', (err, data) => {
           id.push(data.insertId)
-          db.update('test', id, {name: 'test'}, function () {
-            db.select('test', id, function (err, data) {
+          db.update('test', id, {name: 'test'}, () => {
+            db.select('test', id, (err, data) => {
               done((data.length != id.length) || (data[0].name != 'test') || (data[1].name != 'test'))
             })
           })
@@ -182,63 +181,63 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#delete()', function () {
-    it('deletes row', function (done) {
-      db.insert('test', function (err, data) {
+  describe('#delete()', () => {
+    it('deletes row', done => {
+      db.insert('test', (err, data) => {
         var id = data.insertId
-        db.delete('test', id, function () {
-          db.select('test', id, function (err, data) {
+        db.delete('test', id, () => {
+          db.select('test', id, (err, data) => {
             done(data)
           })
         })
       })
     })
-    it('creates writeable delete stream', function (done) {
+    it('creates writeable delete stream', done => {
       var table = 'person' + +(new Date)
-      db.copyTable('person', table, function () {
-        db.select(table).pipe(db.delete(table)).on('finish', function () {
-          db.count(table, function (err, count) {
-            done(count != 0)
+      db.copyTable('person', table, () => {
+        db.select(table).pipe(db.delete(table)).on('finish', () => {
+          db.count(table, (err, count) => {
+            done(count)
           })
         })
       })
     })
   })
-  describe('#save()', function () {
-    it('inserts a new row', function (done) {
-      db.save('test', function (err, data) {
-        db.select('test', data.insertId, function (err, data) {
+  describe('#save()', () => {
+    it('inserts a new row', done => {
+      db.save('test', (err, data) => {
+        db.select('test', data.insertId, (err, data) => {
           done(!+data.id)
         })
       })
     })
-    it('updates an existing row', function (done) {
-      db.save('test', function (err, data) {
+    it('updates an existing row', done => {
+      db.save('test', (err, data) => {
         var item = {id: data.insertId, name: 'test'}
-        db.save('test', item, function () {
-          db.select('test', item.id, function (err, data) {
+        db.save('test', item, () => {
+          db.select('test', item.id, (err, data) => {
             done(data.name != item.name)
           })
         })
       })
     })
-    it('updates an existing row using specified fields', function (done) {
+    it('updates an existing row using specified fields', done => {
       var item = {name: 'test'}
-      db.save('test', item, function (err, data) {
+      db.save('test', item, (err, data) => {
         item.id = data.insertId
         item.name = 'tset'
-        db.save('test', item, 'id', function () {
-          db.select('test', item.id, function (err, data) {
+        db.save('test', item, 'id', () => {
+          db.select('test', item.id, (err, data) => {
             done(!data.name || (data.name == item.name))
           })
         })
       })
     })
-    it('creates writeable save stream', function (done) {
+    it('creates writeable save stream', done => {
       var table = 'person' + +(new Date)
-      db.createTable(table, ['id', 'name', 'gender'], function () {
-        db.select('person').pipe(db.save(table)).on('finish', function () {
-          db.count(table, function (err, count) {
+      db.createTable(table, ['id', 'name', 'gender'], () => {
+        db.select('person').pipe(db.save(table)).on('finish', () => {
+          db.count(table, (err, count) => {
             done(count != person.length)
           })
         })
@@ -259,72 +258,72 @@ describe('Db3', function () {
       })
     })
   })
-  describe('#select()', function () {
-    it('selects an item from table', function (done) {
-      db.select('person', {name: 'God'}, function (err, data) {
+  describe('#select()', () => {
+    it('selects an item from table', done => {
+      db.select('person', {name: 'God'}, (err, data) => {
         done(data[0].name != 'God')
       })
     })
-    it('selects an item from table using "in ()"', function (done) {
-      db.select('person', {id: [1, 2]}, function (err, data) {
+    it('selects an item from table using "in ()"', done => {
+      db.select('person', {id: [1, 2]}, (err, data) => {
         done(data.length != 2)
       })
     })
-    it('selects an item from table using "between"', function (done) {
-      db.select('person', {id: {from: 2, to: 4}}, function (err, data) {
+    it('selects an item from table using "between"', done => {
+      db.select('person', {id: {from: 2, to: 4}}, (err, data) => {
         done(data.length != 3)
       })
     })
-    it('selects an item from table using ">="', function (done) {
-      db.select('person', {id: {from: 2}}, function (err, data) {
+    it('selects an item from table using ">="', done => {
+      db.select('person', {id: {from: 2}}, (err, data) => {
         done(data.length != 5)
       })
     })
-    it('selects an item from table using "<="', function (done) {
-      db.select('person', {id: {to: 2}}, function (err, data) {
+    it('selects an item from table using "<="', done => {
+      db.select('person', {id: {to: 2}}, (err, data) => {
         done(data.length != 2)
       })
     })
-    it('selects an item from table using shorthand id syntax', function (done) {
-      db.select('person', 3, function (err, data) {
+    it('selects an item from table using shorthand id syntax', done => {
+      db.select('person', 3, (err, data) => {
         done(data.name != 'Eve')
       })
     })
-    it('selects an item field from table using shorthand id/name syntax', function (done) {
-      db.select('person', 3, 'name', function (err, data) {
+    it('selects an item field from table using shorthand id/name syntax', done => {
+      db.select('person', 3, 'name', (err, data) => {
         done(data != 'Eve')
       })
     })
-    it('creates readable select stream', function (done) {
+    it('creates readable select stream', done => {
       var count = 0
       db.select('person').
         on('data', () => count++).
-        on('end', function () {
-          done(count <= 0)
+        on('end', () => {
+          done(!count)
         })
     })
-    it('selects from object with orderBy', function (done) {
-      db.select({table: 'person', field: 'name', orderBy: {name: 'desc'}}, function (err, data) {
+    it('selects from object with orderBy', done => {
+      db.select({table: 'person', field: 'name', orderBy: {name: 'desc'}}, (err, data) => {
         done(data[0] != 'Seth')
       })
     })
-    it('selects from object with limit', function (done) {
-      db.select({table: 'person', limit: 10}, function (err, data) {
+    it('selects from object with limit', done => {
+      db.select({table: 'person', limit: 10}, (err, data) => {
         done(data.length != person.length)
       })
     })
-    it('selects with empty condition', function (done) {
-      db.select('person', {}, function (err, data) {
+    it('selects with empty condition', done => {
+      db.select('person', {}, (err, data) => {
         done(data.length != person.length)
       })
     })
-    it('does not fail with select error', function (done) {
+    it('does not fail with select error', done => {
       db.select('', 1, () => {
         done()
       })
     })
   })
-  describe('#groupBy()', function () {
+  describe('#groupBy()', () => {
     var groupBy = {
       count: {
         field: '*',
@@ -360,41 +359,39 @@ describe('Db3', function () {
     }
     ;['count', 'min', 'max', 'avg', 'sum'].forEach(func => {
       var name = func + '(' + (groupBy[func].field || 'id') + ')'
-      it('selects ' + name  + ' from table', function (done) {
-        db[func]('person', function (err, data) {
+      it('selects ' + name  + ' from table', done => {
+        db[func]('person', (err, data) => {
           done(data != groupBy[func].fullTable)
         })
       })
-      it('selects ' + name + ' from table filtered by condition', function (done) {
-        db[func]('person', {name: 'Adam'}, function (err, data) {
+      it('selects ' + name + ' from table filtered by condition', done => {
+        db[func]('person', {name: 'Adam'}, (err, data) => {
           done(data != groupBy[func].filtered)
         })
       })
-      it('selects ' + name + ' from table grouped by field', function (done) {
-        db[func]('person', ['gender', 'id'], function (err, data) {
-          // done(!_.findWhere(data, groupBy[func].grouped))
+      it('selects ' + name + ' from table grouped by field', done => {
+        db[func]('person', ['gender', 'id'], (err, data) => {
           done(!data.find(d => !Object.keys(groupBy[func].grouped).find(key => groupBy[func].grouped[key] != d[key])))
         })
       })
-      it('selects ' + name + ' from table filtered by condition and grouped by field', function (done) {
-        db[func]('person', {name: 'Cain'}, ['gender', 'id'], function (err, data) {
-          // done(!_.findWhere(data, groupBy[func].filteredGrouped))
+      it('selects ' + name + ' from table filtered by condition and grouped by field', done => {
+        db[func]('person', {name: 'Cain'}, ['gender', 'id'], (err, data) => {
           done(!data.find(d => !Object.keys(groupBy[func].filteredGrouped).find(key => groupBy[func].filteredGrouped[key] != d[key])))
         })
       })
     })
   })
-  describe('#query()', function () {
-    it('returns summary data grouped by name', function (done) {
-      db.query('select ??, count(*) from ?? group by ??', ['name', 'test', 'name'], function (err, data) {
+  describe('#query()', () => {
+    it('returns summary data grouped by name', done => {
+      db.query('select ??, count(*) from ?? group by ??', ['name', 'test', 'name'], (err, data) => {
         done(!data.length)
       })
     })
-    it('returns readable stream if no callback provided', function (done) {
+    it('returns readable stream if no callback provided', done => {
       var count = 0
       db.query('select * from ??', 'person').
         on('data', () => count++).
-        on('end', function () {
+        on('end', () => {
           done(count != person.length)
         })
     })
