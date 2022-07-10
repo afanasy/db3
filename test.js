@@ -1,5 +1,6 @@
 var db3 = require('./')
 var db = db3.connect({user: 'root', database : 'test'})
+var set = db.queryString.set
 var orderBy = db.queryString.orderBy
 var stringify = db.queryString.stringify
 
@@ -82,6 +83,52 @@ db.dropTable('test', () => {
 
 describe('Db3', () => {
   describe('#queryString', () => {
+    describe('#set', () => {
+      describe('#query', () => {
+        it('translates number', done => {
+          done(set.query(1) != '`id` = 1')
+        })
+        it('translates object', done => {
+          done(set.query({id: 1, name: 'Adam'}) != '`id` = 1, `name` = \'Adam\'')
+        })
+        it('translates object with now', done => {
+          done(set.query({created: {now: true}}) != '`created` = now()')
+        })
+        set.operator.forEach(operator => {
+          it('translates object with ' + operator + ' operator', done => {
+            var id = {}
+            id[operator] = [1, 2]
+            done(set.query({id: id}) != '`id` = 1 ' + operator + ' 2')
+          })
+        })
+        it('does not crash on empty object', done => {
+          done(set.query({created: {}}) != '`created` = \'[object Object]\'')
+        })
+      })
+      describe('#transform', () => {
+        var fruit = {id: 1, name: 'Apple'}
+        it('transforms with number', done => {
+          done(set.transform(2)(fruit).id != 2)
+        })
+        it('transforms with object', done => {
+          done(set.transform({id: 3})(fruit).id != 3)
+        })
+        it('transforms with now', done => {
+          done(set.transform({created: {now: true}})(fruit).created != (new Date(Date.now() - (new Date).getTimezoneOffset() * 60000)).toISOString().substring(0, 19).replace('T', ' '))
+        })
+        set.operator.forEach(operator => {
+          it('transforms object with ' + operator + ' operator', done => {
+            fruit.id = 1
+            var id = {}
+            id[operator] = [1, 2]
+            done(set.transform({id: id})(fruit).id != eval('1 ' + operator + ' 2'))
+          })
+        })
+        it('does not crash on empty object', done => {
+          done(JSON.stringify(set.transform({created: {}})(fruit).created) != '{}')
+        })
+      })
+    })
     describe('#orderBy', () => {
       describe('#query', () => {
         it('formats string', done => {

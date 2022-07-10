@@ -5,12 +5,90 @@ var escapeId = sqlstring.escapeId
 var is = require('./is')
 var isArray = is.array
 var isFunction = is.function
+var isNumber = is.number
 var isObject = is.object
 var isString = is.string
 var isUndefined = is.undefined
 
 var app = module.exports = {
-  set: require('db3-set'),
+  set: {
+    //https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Assignment_Operators
+    operator: ['+', '-', '*', '/', '%', '<<', '>>', '>>>', '&', '^', '|'],
+    set: (operator, y) => {
+      if (operator == '+')
+        return x => x + y
+      if (operator == '-')
+        return x => x - y
+      if (operator == '*')
+        return x => x * y
+      if (operator == '/')
+        return x => x / y
+      if (operator == '%')
+        return x => x % y
+      if (operator == '<<')
+        return x => x << y
+      if (operator == '>>')
+        return x => x >> y
+      if (operator == '>>>')
+        return x => x >>> y
+      if (operator == '&')
+        return x => x & y
+      if (operator == '^')
+        return x => x ^ y
+      if (operator == '|')
+        return x => x | y
+      return d => d
+    },
+    query: d => {
+      if (isNumber(d) || isString(d))
+        d = {id: +d}
+      return Object.keys(d || {}).map(key => {
+        var value = d[key]
+        if (isObject(value)) {
+          var valueKey = Object.keys(value)
+          if (valueKey.length) {
+            var func = valueKey[0]
+            var args = value[func]
+            if (func == 'now')
+              return format('?? = now()', key)
+            if (app.set.operator.indexOf(func) >= 0)
+              return format('?? = ? ' + func + ' ?', [key, args[0], args[1]])
+            if ((func[1] == '=') && (app.set.operator.indexOf(func[0]) >= 0))
+              return format('?? = ?? ' + func + ' ?', [key, key, args])
+          }
+        }
+        if ((key == 'id') && (value === false))
+          return format('?? = last_insert_id(??)', [key, key])
+        var pair = {}
+        pair[key] = value
+        return format('?', pair)
+      }).join(', ')
+    },
+    transform: d => {
+      if (isNumber(d) || isString(d))
+        d = {id: +d}
+      return a => {
+        Object.keys(d || {}).map(key => {
+          var value = d[key]
+          if (isObject(value)) {
+            var valueKey = Object.keys(value)
+            if (valueKey.length) {
+              var func = valueKey[0]
+              var args = value[func]
+              if (func == 'now')
+                return a[key] = (new Date(Date.now() - (new Date).getTimezoneOffset() * 60000)).toISOString().substring(0, 19).replace('T', ' ')
+              if (app.set.operator.indexOf(func) >= 0)
+                return a[key] = app.set.set(func, args[1])(args[0])
+              if ((func[1] == '=') && (app.set.operator.indexOf(func[0]) >= 0))
+                return a[key] = app.set.set(func, args)(a[key])
+            }
+          }
+          a[key] = value
+        })
+        return a
+      };
+    }
+  },
   where: require('db3-where'),
   orderBy: {
     query: d => {
