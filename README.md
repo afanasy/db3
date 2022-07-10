@@ -1,6 +1,6 @@
 [![NPM Downloads][downloads-image]][downloads-url]
 [![Node.js Version][node-version-image]][node-version-url]
-[![Linux Build][travis-image]][travis-url]
+[![Linux Build][build-image]][build-url]
 
 ## Table of Contents
 
@@ -392,5 +392,5 @@ fruit.sort(orderBy.sort(['name', {id: 'asc'}]))
 [downloads-url]: https://npmjs.org/package/db3
 [node-version-image]: http://img.shields.io/node/v/db3.svg
 [node-version-url]: http://nodejs.org/download/
-[travis-image]: https://img.shields.io/travis/afanasy/db3/master.svg
-[travis-url]: https://travis-ci.org/afanasy/db3
+[build-image]: https://img.shields.io/github/workflow/status/afanasy/db3/build
+[build-url]: https://github.com/afanasy/db3
