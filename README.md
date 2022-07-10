@@ -393,4 +393,4 @@ fruit.sort(orderBy.sort(['name', {id: 'asc'}]))
 [node-version-image]: http://img.shields.io/node/v/db3.svg
 [node-version-url]: http://nodejs.org/download/
 [build-image]: https://img.shields.io/github/workflow/status/afanasy/db3/build
-[build-url]: https://github.com/afanasy/db3
+[build-url]: https://github.com/afanasy/db3/actions/workflows/build.yml
