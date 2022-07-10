@@ -1,6 +1,7 @@
 var db3 = require('./')
 var db = db3.connect({user: 'root', database : 'test'})
 var set = db.queryString.set
+var where = db.queryString.where
 var orderBy = db.queryString.orderBy
 var stringify = db.queryString.stringify
 
@@ -126,6 +127,87 @@ describe('Db3', () => {
         })
         it('does not crash on empty object', done => {
           done(JSON.stringify(set.transform({created: {}})(fruit).created) != '{}')
+        })
+      })
+    })
+    describe('#where', () => {
+      describe('#query', () => {
+        it('translates number', done => {
+          done(where.query(1) != '`id` = 1')
+        })
+        it('translates object', done => {
+          done(where.query({id: 1, name: 'Adam'}) != "`id` = 1 and `name` = 'Adam'")
+        })
+        it('translates object with array', done => {
+          done(where.query({id: [1, 2]}) != '`id` in (1, 2)')
+        })
+        it('translates object with from/to condition', done => {
+          done(where.query({id: {from: 1, to: 2}}) != '`id` >= 1 and `id` <= 2')
+        })
+        ;['=', '!=', '>', '<', '>=', '<='].forEach(operator => {
+          it('translates object with ' + operator + ' operator', done => {
+            var id = {}
+            id[operator] = 1
+            done(where.query({id: id}) != '`id` ' + operator + ' 1')
+          })
+        })
+        it('translates object with = operator and null', done => {
+          done(where.query({id: {'=': null}}) != '`id` is null')
+        })
+        it('translates object with = operator and array', done => {
+          done(where.query({id: {'=': [1]}}) != '`id` in (1)')
+        })
+        it('translates object with = operator and empty array', done => {
+          done(where.query({id: {'=': []}}) != '0')
+        })
+        it('translates object with != operator and null', done => {
+          done(where.query({id: {'!=': null}}) != '`id` is not null')
+        })
+        it('translates object with != operator and array', done => {
+          done(where.query({id: {'!=': [1]}}) != '`id` not in (1)')
+        })
+        it('translates object with != operator and empty array', done => {
+          done(where.query({id: {'!=': []}}) != '1')
+        })
+      })
+      describe('#sort', () => {
+        var fruit = [
+          {id: 1, name: 'Banana'},
+          {id: 2, name: 'Apple'},
+          {id: 3, name: 'Apple'}
+        ]
+        it('filters with number', done => {
+          done(fruit.filter(where.filter(1))[0].id != 1)
+        })
+        it('filters with object', done => {
+          done(fruit.filter(where.filter({name: 'Apple'}))[0].id != 2)
+        })
+        it('filters with array', done => {
+          done(fruit.filter(where.filter({id: [1, 2]}))[0].id != 1)
+        })
+        it('filters with from/to condition', done => {
+          done(fruit.filter(where.filter({id: {from: 2, to: 3}}))[0].id != 2)
+        })
+        var operatorTest = {
+          '=': 2,
+          '!=': 1,
+          '>': 3,
+          '<': 1,
+          '>=': 2,
+          '<=': 1
+        }
+        Object.keys(operatorTest).forEach(operator => {
+          it('filters with ' + operator + ' operator', done => {
+            var id = {}
+            id[operator] = 2
+            done(fruit.filter(where.filter({id: id}))[0].id != operatorTest[operator])
+          })
+        })
+        it('filters with = operator and array', done => {
+          done(fruit.filter(where.filter({id: {'=': [1]}}))[0].id != 1)
+        })
+        it('filters with != operator and array', done => {
+          done(fruit.filter(where.filter({id: {'!=': [1]}}))[0].id != 2)
         })
       })
     })

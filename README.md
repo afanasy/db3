@@ -317,6 +317,40 @@ set.transform({rating: {'+=': 2}})(fruit)
 // fruit will be
 // {name: 'Apple', rating: 3}
 ```
+### Where
+```js
+var where = db.queryString.where
+where.query(filter)
+//returns corresponding sql `where` clause
+where.filter(filter)
+//returns compare function, usable for Array.filter
+```
+#### SQL where
+```js
+where.query({id: 1, name: 'Adam'})
+// returns `id` = 1 and name = 'Adam'
+where.query({id: [1, 2, 3]})
+// returns `id` in (1, 2, 3)
+where.query({id: {'>=': 1, '=<': 2}})
+// returns `id` >= 1 and `id` =< 2
+```
+#### Array.filter
+```js
+var fruit = [
+  {id: 1, name: 'Banana'},
+  {id: 2, name: 'Apple'},
+  {id: 3, name: 'Apple'}
+]
+fruit.filter(where.filter(1))
+// fruit will be
+// [{id: 1, name: 'Banana'}]
+fruit.filter(where.filter({id: [1, 2]}))
+// fruit will be
+// [{id: 1, name: 'Banana'}, {id: 2, name: 'Apple'}]
+fruit.filter(where.filter({id: {'>=': 2, '<=': 3}}))
+// fruit will be
+// [{id: 2, name: 'Apple'}, {id: 3, name: 'Apple'}]
+```
 ### Order by
 ```js
 var orderBy = db.queryString.orderBy

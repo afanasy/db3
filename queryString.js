@@ -4,7 +4,10 @@ var escape = sqlstring.escape
 var escapeId = sqlstring.escapeId
 var is = require('./is')
 var isArray = is.array
+var isBoolean = is.boolean
 var isFunction = is.function
+var isNaN = is.nan
+var isNull = is.null
 var isNumber = is.number
 var isObject = is.object
 var isString = is.string
@@ -89,7 +92,90 @@ var app = module.exports = {
       };
     }
   },
-  where: require('db3-where'),
+  where: {
+    query: d => {
+      if (isNumber(d) || isString(d))
+        d = {id: +d}
+      return app.where.and(d).map(d => {
+        if (isArray(d.value) && !d.value.length) {
+          if (d.operator == '=')
+            return 0
+          if (d.operator == '!=')
+            return 1
+        }
+        return format('?? ', d.key) + app.where.queryOperator(d.operator, d.value) + ' ' + app.where.queryValue(d.value)
+      }).join(' and ')
+    },
+    queryOperator: (operator, value) => {
+      if (operator == '=') {
+        if (isNull(value))
+          return 'is'
+        if (isArray(value))
+          return 'in'
+      }
+      if (operator == '!=') {
+        if (isNull(value))
+          return 'is not'
+        if (isArray(value))
+          return 'not in'
+      }
+      return operator
+    },
+    queryValue: value => {
+      if (isNaN(value) || isNull(value) || isUndefined(value))
+        return 'null'
+      if (isNumber(value))
+        return value
+      if (isBoolean(value))
+        return +value
+      if (isArray(value))
+        return format('(?)', [value])
+      return format('?', [value])
+    },
+    and: d => {
+      var and = []
+      Object.keys(d || {}).forEach(key => {
+        var value = d[key]
+        if (isNaN(value) || isNull(value) || isUndefined(value) || isNumber(value) || isBoolean(value) || isString(value) || isArray(value))
+          return and.push({key: key, value: value, operator: '='})
+        if (isObject(value)) {
+          if (!isUndefined(value.from))
+            and.push({key: key, value: value.from, operator: '>='})
+          if (!isUndefined(value.to))
+            and.push({key: key, value: value.to, operator: '<='})
+          ;['=', '!=', '>', '<', '>=', '<='].forEach(operator => {
+            if (!isUndefined(value[operator]))
+              and.push({key: key, value: value[operator], operator: operator})
+          })
+        }
+      })
+      return and
+    },
+    filter: d => {
+      return a => !app.where.and(d).find(d => {
+        if (d.operator == '=') {
+          if (!isArray(d.value))
+            return a[d.key] !== d.value
+          else
+            return d.value.indexOf(a[d.key]) < 0
+        }
+        if (d.operator == '!=') {
+          if (!isArray(d.value))
+            return a[d.key] === d.value
+          else
+            return d.value.indexOf(a[d.key]) >= 0
+        }
+        if (d.operator == '>')
+          return a[d.key] <= d.value
+        if (d.operator == '<')
+          return a[d.key] >= d.value
+        if (d.operator == '>=')
+          return a[d.key] < d.value
+        if (d.operator == '<=')
+          return a[d.key] > d.value
+      })
+    }
+  },
   orderBy: {
     query: d => {
       if (isString(d))

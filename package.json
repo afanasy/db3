@@ -16,7 +16,6 @@
   },
   "homepage": "https://github.com/afanasy/db3",
   "dependencies": {
-    "db3-where": "1.3.2",
     "mysql": "2.16.0"
   },
   "engines": {
