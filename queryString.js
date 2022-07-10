@@ -5,13 +5,46 @@ var escapeId = sqlstring.escapeId
 var is = require('./is')
 var isArray = is.array
 var isFunction = is.function
+var isObject = is.object
 var isString = is.string
 var isUndefined = is.undefined
 
 var app = module.exports = {
   set: require('db3-set'),
   where: require('db3-where'),
-  orderBy: require('db3-order-by'),
+  orderBy: {
+    query: d => {
+      if (isString(d))
+        return escapeId(d)
+      if (isArray(d))
+        return d.map(app.orderBy.query).join(', ')
+      if (isObject(d))
+        return Object.keys(d).map(key => escapeId(key) + ' ' + d[key]).join(', ')
+    },
+    sort: d => {
+      if (!isArray(d))
+        d = [d]
+      return (a, b) => {
+        var r = 0
+        d.find(rule => {
+          var key
+          var order = 'asc'
+          if (isString(rule))
+            key = rule
+          else {
+            key = Object.keys(rule)[0]
+            order = rule[key]
+          }
+          if (a[key] > b[key])
+            r = (order == 'asc')? 1: -1
+          if (a[key] < b[key])
+            r = (order == 'asc')? -1: 1
+          return !!r
+        })
+        return r
+      }
+    }
+  },
   stringify: (d, value) => {
     if (isString(d)) {
       if (!isUndefined(value))

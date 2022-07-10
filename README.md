@@ -287,6 +287,42 @@ db.queryString.stringify({"name":"delete", "table":"person", "where":1})
 db.queryString.stringify({"name":"delete", "table":"person", "where":{"name":"Alice"}})
 // returns delete from `person` where `name` = 'Alice'
 ```
+### Order by
+```js
+var orderBy = db.queryString.orderBy
+orderBy.query(sortingRule)
+//returns corresponding sql `order by` clause
+orderBy.sort(sortingRule)
+//returns compare function, usable for Array.sort
+```
+#### SQL order by
+```js
+orderBy.query('id')
+// returns `id`
+orderBy.query({id: 'desc'})
+// returns `id` desc
+orderBy.query({id: 'desc', name: 'asc'})
+// returns `id` desc, `name` asc
+orderBy.query(['id', {name: 'desc'}])
+// returns `id`, `name` desc
+```
+#### Array.sort
+```js
+var fruit = [
+  {id: 1, name: 'Banana'},
+  {id: 2, name: 'Apple'},
+  {id: 3, name: 'Apple'}
+]
+fruit.sort(orderBy.sort('name'))
+// fruit will be
+// [{id: 2, name: 'Apple'}, {id: 3, name: 'Apple'}, {id: 1, name: 'Banana'}]
+fruit.sort(orderBy.sort({id: 'desc'}))
+// fruit will be
+// [{id: 3, name: 'Apple'}, {id: 2, name: 'Apple'}, {id: 1, name: 'Banana'}]
+fruit.sort(orderBy.sort(['name', {id: 'asc'}]))
+// fruit will be
+// [{id: 2, name: 'Apple'}, {id: 3, name: 'Apple'}, {id: 1, name: 'Banana'}]
+```
 
 [downloads-image]: https://img.shields.io/npm/dm/db3.svg
 [downloads-url]: https://npmjs.org/package/db3

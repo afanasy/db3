@@ -1,6 +1,7 @@
 var db3 = require('./')
 var db = db3.connect({user: 'root', database : 'test'})
-var stringify = require('./queryString').stringify
+var orderBy = db.queryString.orderBy
+var stringify = db.queryString.stringify
 
 var person = [
   {name: 'God', gender: 'god'},
@@ -81,6 +82,35 @@ db.dropTable('test', () => {
 
 describe('Db3', () => {
   describe('#queryString', () => {
+    describe('#orderBy', () => {
+      describe('#query', () => {
+        it('formats string', done => {
+          done(orderBy.query('id') != '`id`')
+        })
+        it('formats object', done => {
+          done(orderBy.query({id: 'desc', name: 'asc'}) != '`id` desc, `name` asc')
+        })
+        it('formats array', done => {
+          done(orderBy.query(['id', {name: 'desc'}]) != '`id`, `name` desc')
+        })
+      })
+      describe('#sort', () => {
+        var fruit = [
+          {id: 1, name: 'Banana'},
+          {id: 2, name: 'Apple'},
+          {id: 3, name: 'Apple'}
+        ]
+        it('sorts with string', done => {
+          done(fruit.sort(orderBy.sort('name'))[0].id != 2)
+        })
+        it('sorts with object', done => {
+          done(fruit.sort(orderBy.sort({id: 'desc'}))[0].id != 3)
+        })
+        it('sorts with array', done => {
+          done(fruit.sort(orderBy.sort(['name', {id: 'asc'}]))[0].id != 2)
+        })
+      })
+    })
     describe('#stringify', () => {
       var query = {
         'create table `person` (`id` bigint primary key auto_increment, `name` text)': {name: 'createTable', table: 'person'},
@@ -89,7 +119,7 @@ describe('Db3', () => {
         'truncate table `person`': {name: 'truncateTable', table: 'person'},
         'rename table `person` to `nosrep`': {name: 'renameTable', table: 'person', to: 'nosrep'},
         'alter table `person` drop `name`': {name: 'alterTable', table: 'person', drop: 'name'},
-        'insert `person` set `id` = NULL': {name: 'insert', table: 'person'}, 
+        'insert `person` set `id` = NULL': {name: 'insert', table: 'person'},
         'insert `person` select * from `nosrep`': {name: 'insert', table: 'person', select: 'nosrep'},
         'insert `person` set `id` = 1, `name` = \'Bob\'': {name: 'insert', table: 'person', set: {id: 1, name: 'Bob'}},
         'insert `person` set `name` = \'Bob\' on duplicate key update `name` = \'Alice\'': {name: 'insert', table: 'person', set: {name: 'Bob'}, update: {name: 'Alice'}},
