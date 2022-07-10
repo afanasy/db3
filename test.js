@@ -1,5 +1,6 @@
 var db3 = require('./')
 var db = db3.connect({user: 'root', database : 'test'})
+var stringify = require('./queryString').stringify
 
 var person = [
   {name: 'God', gender: 'god'},
@@ -9,6 +10,11 @@ var person = [
   {name: 'Able', gender: 'male'},
   {name: 'Seth', gender: 'male'}
 ]
+
+//add tests
+//omitted arguments
+//groupBy fields clone
+//groupBy more fields
 
 var mocha = {
   test: [],
@@ -20,10 +26,10 @@ var mocha = {
     mocha.depth--
   },
   it: (title, run) => {
-    mocha.test.push({type: 'test', title, depth: mocha.depth, run}) 
+    mocha.test.push({type: 'test', title, depth: mocha.depth, run})
   },
   run: () => {
-    !function next (i) {
+    function next (i) {
       var test = mocha.test[i]
       if (!i)
         start = Date.now()
@@ -45,10 +51,11 @@ var mocha = {
         console.log(indent, (err? '✖': '✓') + ' ' + test.title)
         next(i + 1)
       })
-    }(0)
+    }
     var start
     var pass = 0
     var fail = 0
+    next(0)
   }
 }
 
@@ -73,6 +80,44 @@ db.dropTable('test', () => {
 })
 
 describe('Db3', () => {
+  describe('#queryString', () => {
+    describe('#stringify', () => {
+      var query = {
+        'create table `person` (`id` bigint primary key auto_increment, `name` text)': {name: 'createTable', table: 'person'},
+        'drop table `person`': {name: 'dropTable', table: 'person'},
+        'drop table `0`': {name: 'dropTable', table: 0},
+        'truncate table `person`': {name: 'truncateTable', table: 'person'},
+        'rename table `person` to `nosrep`': {name: 'renameTable', table: 'person', to: 'nosrep'},
+        'alter table `person` drop `name`': {name: 'alterTable', table: 'person', drop: 'name'},
+        'insert `person` set `id` = NULL': {name: 'insert', table: 'person'}, 
+        'insert `person` select * from `nosrep`': {name: 'insert', table: 'person', select: 'nosrep'},
+        'insert `person` set `id` = 1, `name` = \'Bob\'': {name: 'insert', table: 'person', set: {id: 1, name: 'Bob'}},
+        'insert `person` set `name` = \'Bob\' on duplicate key update `name` = \'Alice\'': {name: 'insert', table: 'person', set: {name: 'Bob'}, update: {name: 'Alice'}},
+        'insert `person` (`id`, `name`) values (1, \'Bob\'), (2, \'Alice\'), (3, NULL)': {name: 'insert', table: 'person', set: [
+          {id: 1, name: 'Bob'},
+          {id: 2, name: 'Alice'},
+          {id: 3, name: null}
+        ]},
+        'update `person` set `name` = \'Alice\' where `id` = 1': {name: 'update', table: 'person', set: {name: 'Alice'}, where: 1},
+        'update `person` set `name` = \'Alice\' where `name` = \'Bob\'': {name: 'update', table: 'person', set: {name: 'Alice'}, where: {name: 'Bob'}},
+        'delete from `person` where `id` = 1': {name: 'delete', table: 'person', where: 1},
+        'delete from `person` where `name` = \'Alice\'': {name: 'delete', table: 'person', where: {name: 'Alice'}},
+        'select `0` from `person`': {name: 'select', table: 'person', field: 0},
+        'select count(`id`) as count from `person` where `name` = \'Bob\'': {name: 'groupBy', func: 'count', table: 'person', where: {name: 'Bob'}}
+      }
+      for (var key in query) {
+        it('does ' + query[key].name, done => {
+          done(stringify(query[key]) != key)
+        })
+      }
+      it('does nothing with string query', done => {
+        done(stringify('?') != '?')
+      })
+      it('replaces placeholders in string query when there are 2 arguments', done => {
+        done(stringify('?', 'a') != "'a'")
+      })
+    })
+  })
   describe('#connect()', () => {
     it('connected to the db', done => {
       db.query('select 1', (err, data) => {

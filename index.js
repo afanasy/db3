@@ -1,19 +1,12 @@
 var crypto = require('crypto')
 var stream = require('stream')
 var mysql = require('mysql')
-var queryString = require('db3-query-string')
-
-function tagTester (name) {
-  var tag = '[object ' + name + ']'
-  return function (obj) {
-    return toString.call(obj) === tag
-  }
-}
-
-var isArray = Array.isArray
-var isFunction = tagTester('Function')
-var isNumber = tagTester('Number')
-var isString = tagTester('String')
+var queryString = require('./queryString')
+var is = require('./is')
+var isArray = is.array
+var isFunction = is.function
+var isNumber = is.number
+var isString = is.string
 
 function randomSuffix (prefix, suffix, done) {
   if (!suffix)
@@ -249,8 +242,10 @@ Object.assign(Db3.prototype, {
     }
     cond = queryString.where.query(cond)
     field = field || 'id'
-    if (isString(field))
+    if (!isArray(field))
       field = [field]
+    else
+      field = field.slice()
     var lastField = mysql.escapeId(field.pop())
     field = mysql.escapeId(field)
     var query = 'select ' + field

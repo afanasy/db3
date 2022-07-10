@@ -258,6 +258,36 @@ csv.fromPath('my.csv').pipe(db.insert('person'))
 csv.fromStream(readableStream).pipe(db.insert('person'))
 ```
 
+## Query string
+SQL query in JSON format
+### Examples
+```js
+db.queryString.stringify({"name":"createTable", "table":"person"})
+// returns create table `person` (`id` bigint primary key auto_increment,  `name` text)
+db.queryString.stringify({"name":"dropTable", "table":"person"})
+// returns drop table `person`
+db.queryString.stringify({"name":"truncateTable", "table":"person"})
+// returns truncate table `person`
+db.queryString.stringify({"name":"renameTable", "table":"person", "to":"nosrep"})
+// returns rename table `person` to `nosrep`
+db.queryString.stringify({"name":"alterTable", "table":"person", "drop":"name"})
+// returns alter table `person` drop `name`
+db.queryString.stringify({"name":"insert", "table":"person", "select":"nosrep"})
+// returns insert `person` select * from `nosrep`
+db.queryString.stringify({"name":"insert", "table":"person", "set":{"id":1, "name":"Bob"}})
+// returns insert `person` set `id` = 1,  `name` = 'Bob'
+db.queryString.stringify({"name":"insert", "table":"person", "set":{"name":"Bob"}, "update":{"name":"Alice"}})
+// returns insert `person` set `name` = 'Bob' on duplicate key update `name` = 'Alice'
+db.queryString.stringify({"name":"update", "table":"person", "set":{"name":"Alice"}, "where":1})
+// returns update `person` set `name` = 'Alice' where `id` = 1
+db.queryString.stringify({"name":"update", "table":"person", "set":{"name":"Alice"}, "where":{"name":"Bob"}})
+// returns update `person` set `name` = 'Alice' where `name` = 'Bob'
+db.queryString.stringify({"name":"delete", "table":"person", "where":1})
+// returns delete from `person` where `id` = 1
+db.queryString.stringify({"name":"delete", "table":"person", "where":{"name":"Alice"}})
+// returns delete from `person` where `name` = 'Alice'
+```
+
 [downloads-image]: https://img.shields.io/npm/dm/db3.svg
 [downloads-url]: https://npmjs.org/package/db3
 [node-version-image]: http://img.shields.io/node/v/db3.svg
