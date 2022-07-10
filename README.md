@@ -41,7 +41,7 @@ connection options object passed directly to [mysql.createPool](https://github.c
 ## Disconnecting
 ```javascript
 //db.end(cb)
-db.end(function (err) {
+db.end(err => {
   console.log('all connections closed gracefully')
 })
 ```
@@ -56,18 +56,18 @@ create table `person` (
   gender text
 );
 */
-db.createTable('person', ['id', 'name', 'gender'], function (err, data) {
+db.createTable('person', ['id', 'name', 'gender'], (err, data) => {
   console.log('created table `person` with field `id`, `name`, `gender`')
 })
 ```
-all fields will be of `text` type, except `id` (will be "bigint primary key auto_increment") and fields matching /Id$/, like userId (will become bigint)
+all fields will be of `text` type, except `id` (will be 'bigint primary key auto_increment') and fields matching /Id$/, like userId (will become bigint)
 
 ## Droping table
 SQL: drop table ...
 ```javascript
 //db.dropTable(table, callback)
 //drop table `person`;
-db.dropTable('person', function () {
+db.dropTable('person', () => {
   console.log('table `person` dropped')
 })
 ```
@@ -77,7 +77,7 @@ SQL: truncate table ...
 ```javascript
 //db.truncateTable(table, callback)
 //truncate table `person`;
-db.truncateTable('person', function () {
+db.truncateTable('person', () => {
   console.log('table `person` truncated')
 })
 ```
@@ -87,7 +87,7 @@ SQL: create table ... like ... insert
 ```javascript
 //db.copyTable(from, to, callback)
 //create table `personCopy` like `person`; insert `personCopy` select * from `person`;
-db.copyTable('person', 'personCopy', function () {
+db.copyTable('person', 'personCopy', () => {
   console.log('copied table `person` and all its data to table `personCopy`')
 })
 ```
@@ -97,7 +97,7 @@ SQL: rename table ...
 ```javascript
 //db.renameTable(from, to, callback)
 //rename table `person` to `nosrep`;
-db.renameTable('person', 'nosrep', function () {
+db.renameTable('person', 'nosrep', () => {
   console.log('renamed table `person` and all its data to table `nosrep`')
 })
 ```
@@ -105,7 +105,7 @@ db.renameTable('person', 'nosrep', function () {
 ## Checking if table exists
 ```javascript
 //db.tableExists(table, callback)
-db.tableExists('person', function (err, exists) {
+db.tableExists('person', (err, exists) => {
   if (exists)
     console.log('table `person` exists')
   else
@@ -117,8 +117,8 @@ db.tableExists('person', function (err, exists) {
 SQL: insert ...
 ```javascript
 //db.insert(table, data, callback)
-//insert `person` set `name` = "Bob";
-db.insert('person', {name: 'Bob'}, function (err, data) {
+//insert `person` set `name` = 'Bob';
+db.insert('person', {name: 'Bob'}, (err, data) => {
   console.log('inserted row into table `person` with id ' + data.insertId + ' and `name` set to "Bob"')
 })
 ```
@@ -127,8 +127,8 @@ db.insert('person', {name: 'Bob'}, function (err, data) {
 SQL: update ...
 ```javascript
 //db.update(table, condition, data, callback)
-//update `person` set `name` = "Bob" where `name` = "Alice";
-db.update('person', {name: 'Bob'}, {name: 'Alice'}, function (err, data) {
+//update `person` set `name` = 'Bob' where `name` = 'Alice';
+db.update('person', {name: 'Bob'}, {name: 'Alice'}, (err, data) => {
   console.log('updated table `person`: ' + data.changedRows + ' rows named "Bob" changed name to "Alice"')
 })
 ```
@@ -137,8 +137,8 @@ db.update('person', {name: 'Bob'}, {name: 'Alice'}, function (err, data) {
 SQL: delete from ...
 ```javascript
 //db.delete(table, condition, callback)
-//delete from `person` where `name` = "Alice";
-db.delete('person', {name: 'Alice'}, function (err, data) {
+//delete from `person` where `name` = 'Alice';
+db.delete('person', {name: 'Alice'}, (err, data) => {
   console.log('deleted ' + data.affectedRows + ' rows named "Alice" from table `person`')
 })
 ```
@@ -147,13 +147,13 @@ db.delete('person', {name: 'Alice'}, function (err, data) {
 SQL: insert ... on duplicate key update ...
 ```javascript
 //db.save(table, data, callback)
-//insert `person` set `id` = 1, `name` = "Bob" on duplicate key update `id` = 1, `name` = "Bob";
-db.save('person', {id: 1, name: 'Bob'}, function (err, data) {
+//insert `person` set `id` = 1, `name` = 'Bob' on duplicate key update `id` = 1, `name` = 'Bob';
+db.save('person', {id: 1, name: 'Bob'}, (err, data) => {
   console.log('saved row with id ' + data.insertId + ' with name set to "Bob" into table `person`')
 })
 //db.save(table, data, field, callback)
-//insert `person` set `id` = 1, `name` = "Bob", gender = "male" on duplicate key update `gender` = "male";
-db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', function (err, data) {
+//insert `person` set `id` = 1, `name` = 'Bob', gender = 'male' on duplicate key update `gender` = 'male';
+db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', (err, data) => {
   console.log('saved row with id ' + data.insertId + ' and gender set to "male" into table `person`')
 })
 ```
@@ -161,45 +161,45 @@ db.save('person', {id: 1, name: 'Bob', gender: 'male'}, 'gender', function (err,
 ## Selecting
 ```javascript
 //db.select(table, condition, field, callback)
-//select `name`, `gender` from `person` where `name` = "Bob";
-db.select('person', {name: 'Bob'}, ['name', 'gender'], function (err, data) {
+//select `name`, `gender` from `person` where `name` = 'Bob';
+db.select('person', {name: 'Bob'}, ['name', 'gender'], (err, data) => {
   console.log('selected name, gender fields from table `person`, where `name` = "Bob"')
   console.log(data)
   //[{name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'male'}, {name: 'Bob', gender: 'female'}, ...]
 })
 //if condition value is an array, its converted to in () statement
 //select * from `person` where `name` in ('Bob', 'Alice');
-db.select('person', {name: ['Bob', 'Alice']}, function (err, data) {
+db.select('person', {name: ['Bob', 'Alice']}, (err, data) => {
   console.log('selected all fields table `person`, where `name` is "Bob" or "Alice"')
   console.log(data)
   //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
 })
 //if condition is number or string or array, then its treated as condition on id field
 //select * from `person` where `id` = 1;
-db.select('person', 1, function (err, data) {
+db.select('person', 1, (err, data) => {
   console.log('selected all fields from table `person`, where `id` = 1')
   console.log(data)
   //{id: 1, name: 'Bob', gender: 'male'}
   //if id is set then row object is being returned, instead of array
 })
 //select * from `person` where id in (1, 2);
-db.select('person', [1, 2], function (err, data) {
+db.select('person', [1, 2], (err, data) => {
   console.log('selected all fields from table `person`, where `id` is 1 or 2')
   console.log(data)
   //[{id: 1, name: 'Bob', gender: 'male'}, {id: 2, name: 'Alice', gender: 'female'}]
 })
-//select `name` from `person` where gender = "male";
-db.select('person', {gender: 'male'}, 'name', function (err, data) {
+//select `name` from `person` where gender = 'male';
+db.select('person', {gender: 'male'}, 'name', (err, data) => {
   console.log('selected `name` of all male persons')
   console.log(data)
-  //["Bob", "Bill", "Bob", ...]
+  //['Bob', 'Bill', 'Bob', ...]
   //if field is string then returned array contains this field value instead of row object
 })
 //select `name` from `person` where id = 1;
-db.select('person', 1, 'name', function (err, data) {
+db.select('person', 1, 'name', (err, data) => {
   console.log('selected `name` of person with `id` = 1')
   console.log(data)
-  //"Bob"
+  //'Bob'
   //if id is set and field is string then the field value returned, instead of array
 })
 ```
@@ -208,20 +208,20 @@ db.select('person', 1, 'name', function (err, data) {
 Supported functions: count, min, max, avg, sum
 ```javascript
 //db[functionName](table, condition, field, callback)
-//select count(*) from `person` where `name` = "Bob";
-db.count('person', {name: 'Bob'}, function (err, count) {
+//select count(*) from `person` where `name` = 'Bob';
+db.count('person', {name: 'Bob'}, (err, count) => {
   console.log('there are ' + count + ' persons named "Bob"')  
 })
-//select min(id) from `person` where `name` = "Bob";
-db.min('person', {name: 'Bob'}, function (err, min) {
+//select min(id) from `person` where `name` = 'Bob';
+db.min('person', {name: 'Bob'}, (err, min) => {
   console.log('first "Bob" has id ' + min)  
 })
-//select name, avg(age) from `person` where `name` = "Bob";
-db.avg('person', {name: 'Bob'}, ['age'], function (err, avg) {
+//select name, avg(age) from `person` where `name` = 'Bob';
+db.avg('person', {name: 'Bob'}, ['age'], (err, avg) => {
   console.log('Bob average age is ' + avg)  
 })
-//select name, sum(income) from `person` where `city` = "Hong Kong" group by name;
-db.sum('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function (err, data) {
+//select name, sum(income) from `person` where `city` = 'Hong Kong' group by name;
+db.sum('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], (err, data) => {
   console.log('total income of HK citizens by name for 2015')  
   console.log(data)
   //[{name: 'Yun', sum: someNumber}, {name: 'Tony', sum: someNumber}, {name: 'Donnie', sum: someNumber}, ...]
@@ -231,7 +231,7 @@ db.sum('person', {city: 'Hong Kong', year: '2015'}, ['name', 'income'], function
 ## SQL query
 Proxied to the underlying node-mysql lib, but with swapped 'err' and 'data' arguments (more info [here](https://github.com/felixge/node-mysql#performing-queries))
 ```javascript
-db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10', ['gender', 'person', 'gender'], function (err, data) {
+db.query('select ??, count(*) as count from ?? group by ?? order by id limit 10', ['gender', 'person', 'gender'], (err, data) => {
   console.log(data)
   //[{gender: 'male', count: someNumber}, {gender: 'female', count: someNumber}, ...]
 })
@@ -262,29 +262,29 @@ csv.fromStream(readableStream).pipe(db.insert('person'))
 SQL query in JSON format
 ### Examples
 ```js
-db.queryString.stringify({"name":"createTable", "table":"person"})
+db.queryString.stringify({name: 'createTable', table: 'person'})
 // returns create table `person` (`id` bigint primary key auto_increment,  `name` text)
-db.queryString.stringify({"name":"dropTable", "table":"person"})
+db.queryString.stringify({name: 'dropTable', table: 'person'})
 // returns drop table `person`
-db.queryString.stringify({"name":"truncateTable", "table":"person"})
+db.queryString.stringify({name: 'truncateTable', table: 'person'})
 // returns truncate table `person`
-db.queryString.stringify({"name":"renameTable", "table":"person", "to":"nosrep"})
+db.queryString.stringify({name: 'renameTable', table: 'person', to: 'nosrep'})
 // returns rename table `person` to `nosrep`
-db.queryString.stringify({"name":"alterTable", "table":"person", "drop":"name"})
+db.queryString.stringify({name: 'alterTable', table: 'person', drop: 'name'})
 // returns alter table `person` drop `name`
-db.queryString.stringify({"name":"insert", "table":"person", "select":"nosrep"})
+db.queryString.stringify({name: 'insert', table: 'person', select: 'nosrep'})
 // returns insert `person` select * from `nosrep`
-db.queryString.stringify({"name":"insert", "table":"person", "set":{"id":1, "name":"Bob"}})
+db.queryString.stringify({name: 'insert', table: 'person', set:{id: 1, name: 'Bob'}})
 // returns insert `person` set `id` = 1,  `name` = 'Bob'
-db.queryString.stringify({"name":"insert", "table":"person", "set":{"name":"Bob"}, "update":{"name":"Alice"}})
+db.queryString.stringify({name: 'insert', table: 'person', set: {name: 'Bob'}, update: {name: 'Alice'}})
 // returns insert `person` set `name` = 'Bob' on duplicate key update `name` = 'Alice'
-db.queryString.stringify({"name":"update", "table":"person", "set":{"name":"Alice"}, "where":1})
+db.queryString.stringify({name: 'update', table: 'person', set: {name: 'Alice'}, where: 1})
 // returns update `person` set `name` = 'Alice' where `id` = 1
-db.queryString.stringify({"name":"update", "table":"person", "set":{"name":"Alice"}, "where":{"name":"Bob"}})
+db.queryString.stringify({name: 'update', table: 'person', set: {name: 'Alice'}, where: {name: 'Bob'}})
 // returns update `person` set `name` = 'Alice' where `name` = 'Bob'
-db.queryString.stringify({"name":"delete", "table":"person", "where":1})
+db.queryString.stringify({name: 'delete', table: 'person', where: 1})
 // returns delete from `person` where `id` = 1
-db.queryString.stringify({"name":"delete", "table":"person", "where":{"name":"Alice"}})
+db.queryString.stringify({name: 'delete', table: 'person', where: {name: 'Alice'}})
 // returns delete from `person` where `name` = 'Alice'
 ```
 ### Set
