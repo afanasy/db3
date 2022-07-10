@@ -264,11 +264,11 @@ describe('Db3', () => {
         'select `0` from `person`': {name: 'select', table: 'person', field: 0},
         'select count(`id`) as count from `person` where `name` = \'Bob\'': {name: 'groupBy', func: 'count', table: 'person', where: {name: 'Bob'}}
       }
-      for (var key in query) {
+      Object.keys(query).forEach(key => {
         it('does ' + query[key].name, done => {
           done(stringify(query[key]) != key)
         })
-      }
+      })
       it('does nothing with string query', done => {
         done(stringify('?') != '?')
       })

@@ -252,7 +252,7 @@ Object.assign(app.stringify, {
     if (isArray(set)) {
       if (set.length)
         query += '('  + Object.keys(set[0]).map(key => escapeId(key)).join(', ') + ') values ' +
-          set.map(value => '(' + value.map(d => escape(d)).join(', ') + ')').join(', ')
+          set.map(value => '(' + Object.keys(value).map(key => escape(value[key])).join(', ') + ')').join(', ')
     }
     else {
       set = set || {id: null}
